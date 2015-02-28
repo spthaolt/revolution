@@ -58,8 +58,10 @@ class ElementChunkUpdateManagerController extends modManagerController {
         $placeholders = array();
     
         /* grab chunk */
-        if (empty($scriptProperties['id'])) return $this->failure($this->modx->lexicon('chunk_err_ns'));
-        $this->chunk = $this->modx->getObject('modChunk',$scriptProperties['id']);
+        if (empty($scriptProperties['id']) || strlen($scriptProperties['id']) !== strlen((integer)$scriptProperties['id'])) {
+            return $this->failure($this->modx->lexicon('chunk_err_ns'));
+        }
+        $this->chunk = $this->modx->getObject('modChunk', array('id' => $scriptProperties['id']));
         if (empty($this->chunk)) return $this->failure($this->modx->lexicon('chunk_err_nfs',array('id' => $scriptProperties['id'])));
         if (!$this->chunk->checkPolicy('view')) return $this->failure($this->modx->lexicon('access_denied'));
 
@@ -134,6 +136,7 @@ class ElementChunkUpdateManagerController extends modManagerController {
             'chunk' => $this->chunk,
         ));
         if (is_array($this->onChunkFormPrerender)) { $this->onChunkFormPrerender = implode('',$this->onChunkFormPrerender); }
+        $this->setPlaceholder('onChunkFormPrerender', $this->onChunkFormPrerender);
     }
 
     /**
@@ -195,5 +198,13 @@ class ElementChunkUpdateManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('chunk','category','propertyset','element');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Chunks';
     }
 }

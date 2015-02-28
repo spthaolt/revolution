@@ -10,12 +10,12 @@ class WebLinkCreateManagerController extends ResourceCreateManagerController {
      */
     public function loadCustomCssJs() {
         $mgrUrl = $this->modx->getOption('manager_url',null,MODX_MANAGER_URL);
-        $this->addJavascript($mgrUrl.'assets/modext/util/datetime.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/element/modx.panel.tv.renders.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/resource/modx.grid.resource.security.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/resource/modx.panel.resource.tv.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/resource/modx.panel.resource.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/resource/modx.panel.resource.weblink.js');
+        $this->addJavascript($mgrUrl.'assets/modext/sections/resource/create.js');
         $this->addJavascript($mgrUrl.'assets/modext/sections/resource/weblink/create.js');
         $this->addHtml('<script type="text/javascript">
 // <![CDATA[
@@ -29,10 +29,13 @@ Ext.onReady(function() {
         ,publish_document: "'.$this->canPublish.'"
         ,canSave: "'.($this->modx->hasPermission('save_document') ? 1 : 0).'"
         ,show_tvs: '.(!empty($this->tvCounts) ? 1 : 0).'
+        ,mode: "create"
     });
 });
 // ]]>
 </script>');
+        /* load RTE */
+        $this->loadRichTextEditor();
     }
     
     /**
@@ -41,5 +44,11 @@ Ext.onReady(function() {
      */
     public function getTemplateFile() {
         return 'resource/weblink/create.tpl';
+    }
+
+    public function process(array $scriptProperties = array()) {
+        $placeholders = parent::process($scriptProperties);
+        $this->resourceArray['responseCode'] = $this->resource->getProperty('responseCode','core','HTTP/1.1 301 Moved Permanently');
+        return $placeholders;
     }
 }

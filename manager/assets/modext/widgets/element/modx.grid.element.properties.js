@@ -22,6 +22,7 @@ MODx.panel.ElementProperties = function(config) {
             ,elementType: config.elementType
         },{
             layout: 'form'
+            ,labelAlign: 'top'
             ,border: false
             ,cls: 'main-wrapper'
             ,items: [{
@@ -106,7 +107,7 @@ MODx.grid.ElementProperties = function(config) {
             ,handler: this.create
             ,scope: this
             ,disabled: true
-        },'-',{
+        },{
             text: _('properties_default_locked')
             ,id: 'modx-btn-propset-lock'
             ,handler: this.togglePropertiesLock
@@ -118,7 +119,7 @@ MODx.grid.ElementProperties = function(config) {
             xtype: 'modx-combo-property-set'
             ,id: 'modx-combo-property-set'
             ,baseParams: {
-                action: 'getList'
+                action: 'element/propertyset/getList'
                 ,showAssociated: true
                 ,elementId: config.elementId
                 ,elementType: config.elementType
@@ -131,8 +132,9 @@ MODx.grid.ElementProperties = function(config) {
             text: _('propertyset_add')
             ,handler: this.addPropertySet
             ,scope: this
-        },'-',{
+        },{
             text: _('propertyset_save')
+            ,cls: 'primary-button'
             ,handler: this.save
             ,scope: this
             ,hidden: MODx.request.id ? false : true
@@ -143,11 +145,11 @@ MODx.grid.ElementProperties = function(config) {
             ,handler: this.revertAll
             ,scope:this
             ,disabled: true
-        },'-',{
+        },{
             text: _('properties_import')
             ,handler: this.importProperties
             ,scope: this
-        },'-',{
+        },{
             text: _('properties_export')
             ,handler: this.exportProperties
             ,scope: this
@@ -169,11 +171,10 @@ MODx.grid.ElementProperties = function(config) {
     MODx.grid.ElementProperties.superclass.constructor.call(this,config);
     this.on('afteredit', this.propertyChanged, this);
     this.on('afterRemoveRow', this.propertyChanged, this);
-    this.on('celldblclick',this.onDirty,this);
     this.on('render',function() {
-        this.mask = new Ext.LoadMask(this.getEl(),{msg:_('loading')});
+        this.mask = new Ext.LoadMask(this.getEl());
     },this);
-    
+
     if (this.config.lockProperties) {
         this.on('render',function() {
             this.lockMask = MODx.load({
@@ -187,18 +188,20 @@ MODx.grid.ElementProperties = function(config) {
 };
 Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
     defaultProperties: []
-    
+
     ,onDirty: function() {
         if (this.config.panel) {
             Ext.getCmp(this.config.panel).fireEvent('fieldChange');
         }
     }
-    
+
     ,_renderType: function(v,md,rec,ri) {
         switch (v) {
             case 'combo-boolean': return _('yesno'); break;
             case 'datefield': return _('date'); break;
             case 'numberfield': return _('integer'); break;
+            case 'file': return _('file'); break;
+            case 'color': return _('color'); break;
         }
         return _(v);
     }
@@ -212,7 +215,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
                 return '<span>'+v+'</span>';
         }
     }
-    
+
     ,save: function() {
         var d = this.encode();
         var cb = Ext.getCmp('modx-combo-property-set');
@@ -222,7 +225,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             return true;
         }
         var p = {
-            action: 'updatefromelement'
+            action: 'element/propertyset/updatefromelement'
             ,id: cb.getValue()
             ,data: d
         };
@@ -234,13 +237,13 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
         }
         try {
             if (!this.mask) {
-                this.mask = new Ext.LoadMask(this.getEl(),{msg:_('loading')});
+                this.mask = new Ext.LoadMask(this.getEl());
             }
             if (this.mask) { this.mask.show(); }
         } catch (e) { }
-        
+
         MODx.Ajax.request({
-            url: MODx.config.connectors_url+'element/propertyset.php'
+            url: MODx.config.connector_url
             ,params: p
             ,listeners: {
                 'success': {fn:function(r) {
@@ -257,7 +260,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             }
         });
     }
-    
+
     ,addPropertySet: function(btn,e) {
         this.loadWindow(btn,e,{
             xtype: 'modx-window-element-property-set-add'
@@ -271,7 +274,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
                     cb.store.reload({
                         callback: function() {
                             cb.setValue(o.a.result.object.id);
-                            this.changePropertySet(cb);     
+                            this.changePropertySet(cb);
                         }
                         ,scope: this
                     });
@@ -279,9 +282,9 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
                 },scope:this}
             }
         });
-    }    
-    
-    ,togglePropertiesLock: function() { 
+    }
+
+    ,togglePropertiesLock: function() {
         var ps = Ext.getCmp('modx-combo-property-set').getValue();
         if (ps == 0 || ps == _('default')) {
             Ext.getCmp('modx-btn-propset-lock').setText(this.lockMask.locked ? _('properties_default_unlocked') : _('properties_default_locked'));
@@ -289,7 +292,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             this.toggleButtons(this.lockMask.locked);
         }
     }
-    
+
     ,toggleButtons: function(v) {
         var btn = Ext.getCmp('modx-btn-property-create');
         if (btn) {
@@ -297,7 +300,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             Ext.getCmp('modx-btn-property-revert-all').setDisabled(v);
         }
     }
-    
+
     ,changePropertySet: function(cb) {
         var ps = cb.getValue();
         var lockbtn = Ext.getCmp('modx-btn-propset-lock');
@@ -314,11 +317,11 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             if (this.lockMask) this.lockMask.hide();
             this.toggleButtons(false);
         }
-        
+
         MODx.Ajax.request({
-            url: MODx.config.connectors_url+'element/propertyset.php'
+            url: MODx.config.connector_url
             ,params: {
-                action: 'get'
+                action: 'element/propertyset/get'
                 ,id: ps
                 ,elementId: this.config.elementId
                 ,elementType: this.config.elementType
@@ -333,14 +336,14 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             }
         });
     }
-    
+
     ,create: function(btn,e) {
         this.loadWindow(btn,e,{
             xtype: 'modx-window-element-property-create'
             ,blankValues: true
             ,listeners: {
                 'success': {fn:function(r) {
-                    
+
                     var rec = new this.propRecord({
                         name: r.name
                         ,desc: r.desc
@@ -360,7 +363,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             }
         });
     }
-    
+
     ,update: function(btn,e) {
         this.loadWindow(btn,e,{
             xtype: 'modx-window-element-property-update'
@@ -386,27 +389,29 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             }
         });
     }
-    
+
     ,revert: function(btn,e) {
         Ext.Msg.confirm(_('warning'),_('property_revert_confirm'),function(e) {
-            if (e == 'yes') {                    
+            if (e == 'yes') {
                 var ri = this.menu.recordIndex;
                 var d = this.defaultProperties[ri];
-                var rec = this.getStore().getAt(ri);
-                rec.set('name',d[0]);
-                rec.set('desc',d[1]);
-                rec.set('desc_trans',d[1]);
-                rec.set('xtype',d[2]);
-                rec.set('options',d[3]);
-                rec.set('value',d[4]);
-                rec.set('overridden',0);
-                rec.set('area',d[5]);
-                rec.set('area_trans',d[5]);
-                rec.commit();
+                if (d) {
+                    var rec = this.getStore().getAt(ri);
+                    rec.set('name',d[0]);
+                    rec.set('desc',d[1]);
+                    rec.set('desc_trans',d[1]);
+                    rec.set('xtype',d[2]);
+                    rec.set('options',d[3]);
+                    rec.set('value',d[4]);
+                    rec.set('overridden',0);
+                    rec.set('area',d[5]);
+                    rec.set('area_trans',d[5]);
+                    rec.commit();
+                }
             }
         },this);
     }
-    
+
     ,revertAll: function(btn,e) {
         Ext.Msg.confirm(_('warning'),_('property_revert_all_confirm'),function(e) {
             if (e == 'yes') {
@@ -414,7 +419,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             }
         },this);
     }
-    
+
     ,removeMultiple: function(btn,e) {
         var rows = this.getSelectionModel().getSelections();
         var rids = [];
@@ -429,24 +434,24 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             }
         },this);
     }
-    
+
     ,exportProperties: function (btn,e) {
         var id = Ext.getCmp('modx-combo-property-set').getValue();
         MODx.Ajax.request({
-            url: MODx.config.connectors_url+'element/index.php'
+            url: MODx.config.connector_url
             ,params: {
-                action: 'exportProperties'
+                action: 'element/exportProperties'
                 ,data: this.encode()
                 ,id: id
             }
             ,listeners: {
                 'success': {fn:function(r) {
-                    location.href = MODx.config.connectors_url+'element/index.php?action=exportProperties&download='+r.message+'&id='+id+'&HTTP_MODAUTH='+MODx.siteId;
+                    location.href = MODx.config.connector_url+'?action=element/exportProperties&download='+r.message+'&id='+id+'&HTTP_MODAUTH='+MODx.siteId;
                 },scope:this}
             }
         });
     }
-    
+
     ,importProperties: function (btn,e) {
         this.loadWindow(btn,e,{
             xtype: 'modx-window-properties-import'
@@ -472,7 +477,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             }
         });
     }
-    
+
     ,_showMenu: function(g,ri,e) {
         var sm = this.getSelectionModel();
         if (sm.getSelections().length > 1) {
@@ -489,23 +494,23 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
             MODx.grid.ElementProperties.superclass._showMenu.call(this,g,ri,e);
         }
     }
-    
+
     ,isDefaultPropSet: function() {
         var ps = Ext.getCmp('modx-combo-property-set').getValue();
         return (ps == 0 || ps == _('default'));
     }
-    
+
     ,getMenu: function() {
         var def = this.isDefaultPropSet();
-        
+
         var r = this.menu.record;
-        var m = []
+        var m = [];
         m.push({
             text: _('property_update')
             ,scope: this
             ,handler: this.update
         });
-        
+
         if (r.overridden) {
             m.push({
                 text: _('property_revert')
@@ -513,7 +518,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
                 ,handler: this.revert
             });
         }
-        if (r.overridden == 2 && !def) {
+        if ((r.overridden == 2 && !def) || (r.overridden != 1 && def) || (!r.overridden && !def)) {
             m.push({
                 text: _('property_remove')
                 ,scope: this
@@ -523,17 +528,7 @@ Ext.extend(MODx.grid.ElementProperties,MODx.grid.LocalProperty,{
                 }])
             });
         }
-        
-        if (r.overridden != 1 && def) {
-            m.push({
-                text: _('property_remove')
-                ,scope: this
-                ,handler: this.remove.createDelegate(this,[{
-                    title: _('warning')
-                    ,text: _('property_remove_confirm')
-                }])
-            });
-        }
+
         return m;
     }
 
@@ -576,6 +571,7 @@ MODx.grid.ElementPropertyOption = function(config) {
         }]
         ,tbar: [{
             text: _('property_option_create')
+            ,cls: 'primary-button'
             ,handler: this.create
             ,scope: this
         }]
@@ -623,8 +619,8 @@ MODx.window.CreateElementProperty = function(config) {
     Ext.applyIf(config,{
         title: _('property_create')
         ,id: 'modx-window-element-property-create'
-        ,height: 250
-        ,width: 650
+        // ,height: 250
+        ,width: 600
         ,saveBtnText: _('done')
         ,fields: [{
             layout: 'column'
@@ -677,7 +673,7 @@ MODx.window.CreateElementProperty = function(config) {
                         'select': {fn:function(cb) {
                             var g = Ext.getCmp('modx-cep-grid-element-property-options');
                             if (!g) return;
-                            if (cb.getValue() == 'list') {
+                            if (cb.getValue() == 'list' || cb.getValue() == 'color') {
                                g.show();
                             } else {
                                g.hide();
@@ -736,13 +732,13 @@ MODx.window.CreateElementProperty = function(config) {
 Ext.extend(MODx.window.CreateElementProperty,MODx.Window,{
     submit: function() {
         var v = this.fp.getForm().getValues();
-        
+
         var g = Ext.getCmp('modx-cep-grid-element-property-options');
         var opt = eval(g.encode());
         Ext.apply(v,{
             options: opt
         });
-        
+
         if (this.fp.getForm().isValid()) {
             if (this.fireEvent('success',v)) {
                 this.fp.getForm().reset();
@@ -775,8 +771,8 @@ MODx.window.UpdateElementProperty = function(config) {
     Ext.applyIf(config,{
         title: _('property_update')
         ,id: 'modx-window-element-property-update'
-        ,height: 250
-        ,width: 650
+        // ,height: 250
+        ,width: 600
         ,saveBtnText: _('done')
         ,forceLayout: true
         ,fields: [{
@@ -830,7 +826,7 @@ MODx.window.UpdateElementProperty = function(config) {
                             var g = Ext.getCmp('modx-uep-grid-element-property-options');
                             if (!g) return;
                             var v = cb.getValue();
-                            if (v == 'list') {
+                            if (v == 'list' || v == 'color') {
                                 g.show();
                             } else {
                                 g.hide();
@@ -861,12 +857,12 @@ MODx.window.UpdateElementProperty = function(config) {
                     ,fieldLabel: _('area')
                     ,description: MODx.expandHelp ? '' : _('property_area_desc')
                     ,name: 'area'
-                    ,id: 'modx-cep-area'
+                    ,id: 'modx-uep-area'
                     ,anchor: '100%'
                     ,allowBlank: true
                 },{
                     xtype: MODx.expandHelp ? 'label' : 'hidden'
-                    ,forId: 'modx-cep-area'
+                    ,forId: 'modx-uep-area'
                     ,html: _('property_area_desc')
                     ,cls: 'desc-under'
                 }]
@@ -894,13 +890,13 @@ MODx.window.UpdateElementProperty = function(config) {
 Ext.extend(MODx.window.UpdateElementProperty,MODx.Window,{
     submit: function() {
         var v = this.fp.getForm().getValues();
-        
+
         var g = Ext.getCmp('modx-uep-grid-element-property-options');
         var opt = eval(g.encode());
         Ext.apply(v,{
             options: opt
         });
-        
+
         if (this.fp.getForm().isValid()) {
             if (this.fireEvent('success',v)) {
                 this.fp.getForm().reset();
@@ -913,7 +909,7 @@ Ext.extend(MODx.window.UpdateElementProperty,MODx.Window,{
     ,onShow: function() {
         var g = Ext.getCmp('modx-uep-grid-element-property-options');
         if (!g) return;
-        if (this.fp.getForm().findField('xtype').getValue() == 'list') {
+        if (this.fp.getForm().findField('xtype').getValue() == 'list' || this.fp.getForm().findField('xtype').getValue() == 'color') {
             g.show();
         } else {
             g.hide();
@@ -948,8 +944,8 @@ MODx.window.CreateElementPropertyOption = function(config) {
     Ext.applyIf(config,{
         title: _('property_option_create')
         ,id: 'modx-window-element-property-option-create'
-        ,height: 250
-        ,width: 450
+        // ,height: 250
+        // ,width: 450
         ,saveBtnText: _('done')
         ,fields: [{
             fieldLabel: _('name')
@@ -985,7 +981,7 @@ Ext.reg('modx-window-element-property-option-create',MODx.window.CreateElementPr
 
 /**
  * Displays a xtype combobox
- * 
+ *
  * @class MODx.combo.xType
  * @extends Ext.form.ComboBox
  * @param {Object} config An object of configuration properties
@@ -1003,6 +999,8 @@ MODx.combo.xType = function(config) {
                 ,[_('date'),'datefield']
                 ,[_('list'),'list']
                 ,[_('integer'),'numberfield']
+                ,[_('file'),'file']
+                ,[_('color'),'color']
             ]
         })
         ,displayField: 'd'
@@ -1052,9 +1050,9 @@ MODx.combo.PropertySet = function(config) {
     Ext.applyIf(config,{
         name: 'propertyset'
         ,hiddenName: 'propertyset'
-        ,url: MODx.config.connectors_url+'element/propertyset.php'
+        ,url: MODx.config.connector_url
         ,baseParams: {
-            action: 'getList'
+            action: 'element/propertyset/getList'
         }
         ,displayField: 'name'
         ,valueField: 'id'
@@ -1079,8 +1077,9 @@ MODx.window.AddPropertySet = function(config) {
     Ext.applyIf(config,{
         title: _('propertyset_add')
         ,id: 'modx-window-element-property-set-add'
-        ,url: MODx.config.connectors_url+'element/propertyset.php'
-        ,action: 'associate'
+        ,url: MODx.config.connector_url
+        ,action: 'element/propertyset/associate'
+        ,autoHeight: true // makes window grow when the fieldset is toggled
         ,fields: [{
             xtype: 'hidden'
             ,name: 'elementId'
@@ -1092,7 +1091,7 @@ MODx.window.AddPropertySet = function(config) {
         },{
             html: _('propertyset_panel_desc')
             ,cls: 'panel-desc'
-            
+
         },MODx.PanelSpacer,{
             xtype: 'modx-combo-property-set'
             ,fieldLabel: _('propertyset')
@@ -1100,7 +1099,7 @@ MODx.window.AddPropertySet = function(config) {
             ,id: 'modx-aps-propertyset'
             ,anchor: '100%'
             ,baseParams: {
-                action: 'getList'
+                action: 'element/propertyset/getList'
                 ,showNotAssociated: true
                 ,elementId: config.record.elementId
                 ,elementType: config.record.elementType
@@ -1121,9 +1120,11 @@ MODx.window.AddPropertySet = function(config) {
             ,listeners: {
                 'expand': {fn:function(p) {
                     Ext.getCmp('modx-aps-propertyset-new').setValue(true);
+                    this.center(); // re-centers window on screen after height changed
                 },scope:this}
                 ,'collapse': {fn:function(p) {
                     Ext.getCmp('modx-aps-propertyset-new').setValue(false);
+                    this.center(); // re-centers window on screen after height changed
                 },scope:this}
             }
             ,items: [{
@@ -1152,8 +1153,8 @@ MODx.window.ImportProperties = function(config) {
     Ext.applyIf(config,{
         title: _('properties_import')
         ,id: 'modx-window-properties-import'
-        ,url: MODx.config.connectors_url+'element/index.php'
-        ,action: 'importProperties'
+        ,url: MODx.config.connector_url
+        ,action: 'element/importProperties'
         ,fileUpload: true
         ,saveBtnText: _('import')
         ,fields: [{
@@ -1163,15 +1164,25 @@ MODx.window.ImportProperties = function(config) {
             ,cls: 'panel-desc'
             ,style: 'margin-bottom: 10px;'
         },{
-            xtype: 'textfield'
+            xtype: 'fileuploadfield'
             ,fieldLabel: _('file')
+            ,buttonText: _('upload.buttons.upload')
             ,name: 'file'
             ,id: 'modx-impp-file'
             ,anchor: '100%'
-            ,inputType: 'file'
+            // ,inputType: 'file'
         }]
     });
     MODx.window.ImportProperties.superclass.constructor.call(this,config);
+
+    // Trigger "fileselected" event
+    var fp = Ext.getCmp('modx-impp-file');
+    var onFileUploadFieldFileSelected = function(fp, fakeFilePath) {
+        var fileApi = fp.fileInput.dom.files;
+        fp.el.dom.value = (typeof fileApi != 'undefined') ? fileApi[0].name : fakeFilePath.replace("C:\\fakepath\\", "");
+    };
+    fp.on('fileselected', onFileUploadFieldFileSelected);
+
 };
 Ext.extend(MODx.window.ImportProperties,MODx.Window);
 Ext.reg('modx-window-properties-import',MODx.window.ImportProperties);

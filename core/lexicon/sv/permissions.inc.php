@@ -1,8 +1,8 @@
 <?php
 /**
- * Permissions Swedish lexicon topic
+ * Permissions English lexicon topic
  *
- * @language sv
+ * @language en
  * @package modx
  * @subpackage lexicon
  */
@@ -14,7 +14,7 @@ $_lang['perm.change_password_desc'] = 'Användaren kan ändra sitt lösenord.';
 $_lang['perm.change_profile_desc'] = 'Användaren kan ändra sin profil.';
 $_lang['perm.charsets_desc'] = 'Se en lista med teckenuppsättningar.';
 $_lang['perm.class_map_desc'] = 'Se en lista med klasser i klasskartan.';
-$_lang['perm.components_desc'] = 'Se komponentmenyn.';
+$_lang['perm.components_desc'] = 'Se Extras-menyn.';
 $_lang['perm.content_types_desc'] = 'Se innehållstypssidan.';
 $_lang['perm.copy_desc'] = 'Möjligheten att kopiera ett objekt.';
 $_lang['perm.countries_desc'] = 'Se en lista med länder.';
@@ -129,6 +129,7 @@ $_lang['perm.resourcegroup_resource_list_desc'] = 'Se eller lista resurser i en 
 $_lang['perm.resourcegroup_new_desc'] = 'Skapa en ny resursgrupp.';
 $_lang['perm.resourcegroup_save_desc'] = 'Spara en resursgrupp.';
 $_lang['perm.resourcegroup_view_desc'] = 'Lista resursgrupper.';
+$_lang['perm.resource_duplicate_desc'] = 'Duplicera en resurs.';
 $_lang['perm.resource_quick_create_desc'] = 'Använda "Snabbskapa resurs" i resursträdet till vänster.';
 $_lang['perm.resource_quick_update_desc'] = 'Använda "Snabbuppdatera resurs" i resursträdet till vänster.';
 $_lang['perm.resource_tree_desc'] = 'Se resursträdet till vänster.';

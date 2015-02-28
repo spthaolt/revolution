@@ -1,17 +1,20 @@
 /**
  * Loads the Template panel
- * 
+ *
  * @class MODx.panel.Template
  * @extends MODx.FormPanel
  * @param {Object} config An object of configuration properties
  * @xtype modx-panel-template
  */
+
 MODx.panel.Template = function(config) {
     config = config || {record:{}};
     config.record = config.record || {};
     Ext.applyIf(config,{
-        url: MODx.config.connectors_url+'element/template.php'
-        ,baseParams: {}
+        url: MODx.config.connector_url
+        ,baseParams: {
+            action: 'element/template/get'
+        }
         ,id: 'modx-panel-template'
 		,cls: 'container form-with-labels'
         ,class_key: 'modTemplate'
@@ -72,7 +75,7 @@ MODx.panel.Template = function(config) {
                             }}
                         }
                     },{
-                        xtype: MODx.expandHelp ? 'label' : 'hidden' 
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
                         ,forId: 'modx-template-templatename'
                         ,html: _('template_desc_name')
                         ,cls: 'desc-under'
@@ -91,19 +94,47 @@ MODx.panel.Template = function(config) {
                         ,html: _('template_desc_description')
                         ,cls: 'desc-under'
                     },{
+                        xtype: 'textfield'
+                        ,fieldLabel: _('template_icon')
+                        ,description: MODx.expandHelp ? '' : _('template_icon_description')
+                        ,name: 'icon'
+                        ,id: 'modx-template-icon'
+                        ,anchor: '100%'
+                        ,maxLength: 100
+                        ,enableKeyEvents: true
+                        ,allowBlank: true
+                        ,value: config.record.icon
+                    },{
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
+                        ,forId: 'modx-template-icon'
+                        ,html: _('template_icon_description')
+                        ,cls: 'desc-under'
+                    },{
                         xtype: 'modx-combo-browser'
                         ,browserEl: 'modx-browser'
                         ,fieldLabel: _('static_file')
                         ,description: MODx.expandHelp ? '' : _('static_file_msg')
                         ,name: 'static_file'
-                        ,hideFiles: true
+                        // ,hideFiles: true
                         ,openTo: config.record.openTo || ''
                         ,id: 'modx-template-static-file'
+                        ,triggerClass: 'x-form-code-trigger'
                         ,anchor: '100%'
                         ,maxLength: 255
                         ,value: config.record.static_file || ''
                         ,hidden: !config.record['static']
                         ,hideMode: 'offsets'
+                        ,validator: function(value){
+                            if (Ext.getCmp('modx-template-static').getValue() === true) {
+                                if (Ext.util.Format.trim(value) != '') {
+                                    return true;
+                                } else {
+                                    return _('static_file_ns');
+                                }
+                            }
+
+                            return true;
+                        }
                     },{
                         xtype: MODx.expandHelp ? 'label' : 'hidden'
                         ,forId: 'modx-template-static-file'
@@ -127,7 +158,7 @@ MODx.panel.Template = function(config) {
                         ,anchor: '100%'
                         ,value: config.record.category || 0
                     },{
-                        xtype: MODx.expandHelp ? 'label' : 'hidden' 
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
                         ,forId: 'modx-template-category'
                         ,html: _('template_desc_category')
                         ,cls: 'desc-under'
@@ -140,7 +171,7 @@ MODx.panel.Template = function(config) {
                         ,inputValue: 1
                         ,checked: config.record.locked || false
                     },{
-                        xtype: 'checkbox'
+                        xtype: 'xcheckbox'
                         ,boxLabel: _('clear_cache_on_save')
                         ,description: _('clear_cache_on_save_msg')
                         ,hideLabel: true
@@ -175,9 +206,15 @@ MODx.panel.Template = function(config) {
                         ,hidden: !config.record['static']
                         ,hideMode: 'offsets'
                         ,baseParams: {
-                            action: 'getList'
+                            action: 'source/getList'
                             ,showNone: true
                             ,streamsOnly: true
+                        }
+                        ,listeners: {
+                            select: {
+                                fn: this.changeSource
+                                ,scope: this
+                            }
                         }
                     },{
                         xtype: MODx.expandHelp ? 'label' : 'hidden'
@@ -197,7 +234,7 @@ MODx.panel.Template = function(config) {
 				,labelAlign: 'top'
 				,items: [{
 					xtype: 'textarea'
-					,fieldLabel: _('template_code')						
+					,fieldLabel: _('template_code')
 					,name: 'content'
 					,id: 'modx-template-content'
 					,anchor: '100%'
@@ -271,6 +308,17 @@ Ext.extend(MODx.panel.Template,MODx.FormPanel,{
         MODx.fireEvent('ready');
         return true;
     }
+
+    /**
+     * Set the browser window "media source" source
+     */
+    ,changeSource: function() {
+        var browser = Ext.getCmp('modx-template-static-file')
+            ,source = Ext.getCmp('modx-template-static-source').getValue();
+
+        browser.config.source = source;
+    }
+
     ,beforeSubmit: function(o) {
         var g = Ext.getCmp('modx-grid-template-tv');
         Ext.apply(o.form.baseParams,{
@@ -287,7 +335,7 @@ Ext.extend(MODx.panel.Template,MODx.FormPanel,{
         if (MODx.request.id) Ext.getCmp('modx-grid-element-properties').save();
         Ext.getCmp('modx-grid-template-tv').getStore().commitChanges();
         this.getForm().setValues(r.result.object);
-        
+
         var t = Ext.getCmp('modx-element-tree');
         if (t) {
             var c = Ext.getCmp('modx-template-category').getValue();
@@ -302,12 +350,11 @@ Ext.extend(MODx.panel.Template,MODx.FormPanel,{
         this.on('success',function(o) {
             var id = o.result.object.id;
             var w = Ext.getCmp('modx-template-which-editor').getValue();
-            MODx.request.a = MODx.action['element/template/update'];
-            var u = '?'+Ext.urlEncode(MODx.request)+'&which_editor='+w+'&id='+id;
-            location.href = u;
+            MODx.request.a = 'element/template/update';
+            location.href = '?'+Ext.urlEncode(MODx.request)+'&which_editor='+w+'&id='+id;
         });
         this.submit();
-    }    
+    }
     ,cleanupEditor: function() {
         if (MODx.onSaveEditor) {
             var fld = Ext.getCmp('modx-template-content');

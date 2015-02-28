@@ -22,6 +22,9 @@ class SystemSettingsManagerController extends modManagerController {
     public function loadCustomCssJs() {
         $this->addHtml('<script type="text/javascript">
         // <[!CDATA[
+        Ext.onReady(function() {
+            MODx.add("modx-page-system-settings");
+        });
         MODx.onSiteSettingsRender = "'.$this->onSiteSettingsRender.'";
         // ]]>
         </script>');
@@ -38,7 +41,7 @@ class SystemSettingsManagerController extends modManagerController {
     public function process(array $scriptProperties = array()) {
         $onSiteSettingsRender = $this->modx->invokeEvent('OnSiteSettingsRender');
         if (is_array($onSiteSettingsRender)) {
-            $this->onSiteSettingsRender = implode("\n",$onSiteSettingsRender);
+            $this->onSiteSettingsRender = implode("\"\n+ \"",$onSiteSettingsRender);
         }
     }
 
@@ -56,7 +59,7 @@ class SystemSettingsManagerController extends modManagerController {
      * @return string
      */
     public function getTemplateFile() {
-        return 'system/settings/index.tpl';
+        return '';
     }
 
     /**
@@ -65,5 +68,13 @@ class SystemSettingsManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('setting');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Settings';
     }
 }

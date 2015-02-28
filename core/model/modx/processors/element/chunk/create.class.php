@@ -16,11 +16,24 @@ require_once (dirname(dirname(__FILE__)).'/create.class.php');
  */
 class modChunkCreateProcessor extends modElementCreateProcessor {
     public $classKey = 'modChunk';
-    public $languageTopics = array('chunk');
+    public $languageTopics = array('chunk','category','element');
     public $permission = 'new_chunk';
-    public $elementType = 'chunk';
     public $objectType = 'chunk';
     public $beforeSaveEvent = 'OnBeforeChunkFormSave';
     public $afterSaveEvent = 'OnChunkFormSave';
+
+    public function beforeSave() {
+        $isStatic = intval($this->getProperty('static', 0));
+
+        if ($isStatic == 1) {
+            $staticFile = $this->getProperty('static_file');
+
+            if (empty($staticFile)) {
+                $this->addFieldError('static_file', $this->modx->lexicon('static_file_ns'));
+            }
+        }
+
+        return parent::beforeSave();
+    }
 }
 return 'modChunkCreateProcessor';

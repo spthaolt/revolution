@@ -1,11 +1,12 @@
 <?php
+require_once dirname(__FILE__).'/resource.class.php';
 /**
  * Loads the resource data page
  *
  * @package modx
  * @subpackage manager.controllers
  */
-class ResourceDataManagerController extends modManagerController {
+class ResourceDataManagerController extends ResourceManagerController {
     /** @var modResource $resource */
     public $resource;
     /** @var string $previewUrl */
@@ -55,8 +56,12 @@ class ResourceDataManagerController extends modManagerController {
      */
     public function process(array $scriptProperties = array()) {
         $placeholders = array();
-        
-        $this->resource = $this->modx->getObject('modResource', $scriptProperties['id']);
+
+        if (empty($scriptProperties['id']) || strlen($scriptProperties['id']) !== strlen((integer)$scriptProperties['id'])) {
+            return $this->failure($this->modx->lexicon('resource_err_nf'));
+        }
+
+        $this->resource = $this->modx->getObject('modResource', array('id' => $scriptProperties['id']));
         if ($this->resource == null) return $this->failure(sprintf($this->modx->lexicon('resource_with_id_not_found'), $scriptProperties['id']));
 
         if (!$this->resource->checkPolicy('view')) return $this->failure($this->modx->lexicon('access_denied'));
@@ -102,7 +107,9 @@ class ResourceDataManagerController extends modManagerController {
      * @return string
      */
     public function getPageTitle() {
-        return $this->resource->get('pagetitle');
+        if ($this->resource) {
+            return $this->resource->get('pagetitle');
+        }
     }
 
     /**
@@ -110,7 +117,7 @@ class ResourceDataManagerController extends modManagerController {
      * @return string
      */
     public function getTemplateFile() {
-        return 'resource/data.tpl';
+        return '';
     }
 
     /**
@@ -119,5 +126,13 @@ class ResourceDataManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('resource');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Resources';
     }
 }

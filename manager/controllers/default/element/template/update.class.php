@@ -61,8 +61,10 @@ class ElementTemplateUpdateManagerController extends modManagerController {
         $placeholders = array();
 
         /* load template */
-        if (empty($scriptProperties['id'])) return $this->failure($this->modx->lexicon('template_err_ns'));
-        $this->template = $this->modx->getObject('modTemplate',$scriptProperties['id']);
+        if (empty($scriptProperties['id']) || strlen($scriptProperties['id']) !== strlen((integer)$scriptProperties['id'])) {
+            return $this->failure($this->modx->lexicon('template_err_ns'));
+        }
+        $this->template = $this->modx->getObject('modTemplate', array('id' => $scriptProperties['id']));
         if ($this->template == null) return $this->failure($this->modx->lexicon('template_err_nf'));
         if (!$this->template->checkPolicy('view')) return $this->failure($this->modx->lexicon('access_denied'));
 
@@ -127,6 +129,7 @@ class ElementTemplateUpdateManagerController extends modManagerController {
             'mode' => modSystemEvent::MODE_UPD,
         ));
         if (is_array($this->onTempFormPrerender)) $this->onTempFormPrerender = implode('',$this->onTempFormPrerender);
+        $this->setPlaceholder('onTempFormPrerender', $this->onTempFormPrerender);
     }
 
     /**
@@ -166,6 +169,14 @@ class ElementTemplateUpdateManagerController extends modManagerController {
      * @return array
      */
     public function getLanguageTopics() {
-        return array('template','category','system_events','propertyset','element');
+        return array('template','category','system_events','propertyset','element','tv');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Templates';
     }
 }

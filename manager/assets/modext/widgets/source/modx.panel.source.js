@@ -2,9 +2,9 @@ MODx.panel.Source = function(config) {
     config = config || {};
     Ext.applyIf(config,{
         id: 'modx-panel-source'
-        ,url: MODx.config.connectors_url+'source/index.php'
+        ,url: MODx.config.connector_url
         ,baseParams: {
-            action: 'update'
+            action: 'source/update'
         }
         ,defaults: { collapsible: false ,autoHeight: true }
 		,cls: 'container form-with-labels'
@@ -38,7 +38,7 @@ MODx.panel.Source = function(config) {
                 ,items: [{
 					xtype: 'panel'
 					,border: false
-					,cls:'main-wrapper'
+					,cls: 'main-wrapper'
 					,layout: 'form'
 					,labelAlign: 'top'
 					,items: [{
@@ -111,9 +111,6 @@ MODx.panel.Source = function(config) {
 
                         }]
                     }]
-                },{
-                    html: '<hr />'					
-                    ,border: false
                 },{
                     html: '<p>'+_('source_properties.intro_msg')+'</p>'
 					,bodyCssClass: 'panel-desc'
@@ -208,9 +205,9 @@ Ext.extend(MODx.panel.Source,MODx.FormPanel,{
     }
     ,success: function(o) {
         if (Ext.isEmpty(this.config.record) || Ext.isEmpty(this.config.record.id)) {
-            location.href = '?a='+MODx.action['source/update']+'&id='+o.result.object.id;
+            MODx.loadPage('source/update', 'id='+o.result.object.id);
         } else {
-            Ext.getCmp('modx-btn-save').setDisabled(false);
+            Ext.getCmp('modx-abtn-save').setDisabled(false);
             var wg = Ext.getCmp('modx-grid-source-properties');
             if (wg) { wg.getStore().commitChanges(); }
             var ag = Ext.getCmp('modx-grid-source-access');

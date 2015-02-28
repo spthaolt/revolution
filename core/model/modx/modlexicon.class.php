@@ -2,7 +2,7 @@
 /**
  * MODX Revolution
  *
- * Copyright 2006-2012 by MODX, LLC.
+ * Copyright 2006-2015 by MODX, LLC.
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -86,7 +86,9 @@ class modLexicon {
      */
     public function clearCache($path = '') {
         $path = 'lexicon/'.$path;
-        return $this->modx->cacheManager->clearCache(array($path));
+        return $this->modx->cacheManager->refresh(array(
+            'lexicon_topics' => array($path),
+        ));
     }
 
     /**
@@ -158,7 +160,7 @@ class modLexicon {
     public function load() {
         $topics = func_get_args(); /* allow for dynamic number of lexicons to load */
 
-        if ($this->modx->context->get('key') == 'mgr') {
+        if ($this->modx->context && $this->modx->context->get('key') == 'mgr') {
             $defaultLanguage = $this->modx->getOption('manager_language',null,$this->modx->getOption('cultureKey',null,'en'));
         } else {
             $defaultLanguage = $this->modx->getOption('cultureKey',null,'en');
@@ -224,6 +226,9 @@ class modLexicon {
         $key = $this->getCacheKey($namespace, $topic, $language);
         $enableCache = ($namespace != 'core' && !$this->modx->getOption('cache_noncore_lexicon_topics',null,true)) ? false : true;
 
+        if (!$this->modx->cacheManager) {
+            $this->modx->getCacheManager();
+        }
         $cached = $this->modx->cacheManager->get($key, array(
             xPDO::OPT_CACHE_KEY => $this->modx->getOption('cache_lexicon_topics_key', null, 'lexicon_topics'),
             xPDO::OPT_CACHE_HANDLER => $this->modx->getOption('cache_lexicon_topics_handler', null, $this->modx->getOption(xPDO::OPT_CACHE_HANDLER)),
@@ -312,7 +317,7 @@ class modLexicon {
             /** @var modNamespace $namespaceObj */
             $namespaceObj = $this->modx->getObject('modNamespace',$namespace);
             if ($namespaceObj) {
-                $corePath = $namespaceObj->get('path');
+                $corePath = $namespaceObj->getCorePath();
             }
         }
         return $corePath;
@@ -343,6 +348,7 @@ class modLexicon {
                 }
             }
         }
+        sort($topics);
         return $topics;
     }
 
@@ -365,6 +371,7 @@ class modLexicon {
                 $languages[] = $language->getFilename();
             }
         }
+        sort($languages);
         return $languages;
     }
 

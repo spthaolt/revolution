@@ -4,7 +4,7 @@ MODx.panel.DashboardWidget = function(config) {
     var itms = [];
     itms.push({
         title: _('general_information')
-        ,cls: 'container form-with-labels'
+        ,cls: 'main-wrapper'
         ,border: false
         ,defaults: { border: false ,msgTarget: 'side' }
         ,layout: 'form'
@@ -17,7 +17,7 @@ MODx.panel.DashboardWidget = function(config) {
                 ,labelAlign: 'top'
                 ,anchor: '100%'
                 ,border: false
-                ,cls:'main-wrapper'
+                // ,cls:'main-wrapper'
                 ,labelSeparator: ''
             }
             ,items: [{
@@ -149,16 +149,18 @@ MODx.panel.DashboardWidget = function(config) {
             xtype: 'panel'
             ,border: false
             ,layout: 'form'
-            ,cls:'main-wrapper'
+            // ,cls:'main-wrapper'
+            ,style: 'padding-top: 15px' // new form panel, first label is not gonna have top padding
             ,labelAlign: 'top'
-            ,items: [{
+            ,items: [/*{
                 html: '<h4>'+_('widget_content')+'</h4>'
                 ,border: false
                 ,anchor: '100%'
-            },{
+             },*/{
                 xtype: 'textarea'
                 ,name: 'content'
-                ,hideLabel: true
+                ,fieldLabel: _('widget_content')
+                // ,hideLabel: true
                 ,anchor: '100%'
                 ,height: 400
             }]
@@ -179,7 +181,6 @@ MODx.panel.DashboardWidget = function(config) {
                 ,preventRender: true
                 ,widget: config.record.id
                 ,autoHeight: true
-                ,width: '97%'
                 ,listeners: {
                     'afterRemoveRow': {fn:this.markDirty,scope:this}
                     ,'updateRole': {fn:this.markDirty,scope:this}
@@ -191,9 +192,9 @@ MODx.panel.DashboardWidget = function(config) {
 
     Ext.applyIf(config,{
         id: 'modx-panel-dashboard-widget'
-        ,url: MODx.config.connectors_url+'system/dashboard/widget.php'
+        ,url: MODx.config.connector_url
         ,baseParams: {
-            action: 'update'
+            action: 'system/dashboard/widget/update'
         }
         ,cls: 'container'
         ,defaults: { collapsible: false ,autoHeight: true }
@@ -208,12 +209,12 @@ MODx.panel.DashboardWidget = function(config) {
                 autoHeight: true
                 ,border: false
             }
-            ,border: true
+            //,border: true
             ,id: 'modx-dashboard-widget-tabs'
             ,forceLayout: true
             ,deferredRender: false
             ,stateful: true
-            ,stateId: 'modx-dashboard-widget-tabpanel'
+            ,stateId: 'modx-dashboard-widget-tabpanel' + ((Ext.isEmpty(config.record.id)) ? '-new' : '')
             ,stateEvents: ['tabchange']
             ,getState:function() {
                 return {activeTab:this.items.indexOf(this.getActiveTab())};
@@ -237,7 +238,9 @@ Ext.extend(MODx.panel.DashboardWidget,MODx.FormPanel,{
             return false;
         }
         this.getForm().setValues(this.config.record);
-        Ext.get('modx-dashboard-widget-header').update('<h2>'+_('widget')+': '+this.config.record.name_trans+'</h2>');
+        Ext.defer(function() {
+            Ext.get('modx-dashboard-widget-header').update('<h2>'+_('widget')+': '+this.config.record.name_trans+'</h2>');
+        }, 250, this);
 
         var d = this.config.record.dashboards;
         var g = Ext.getCmp('modx-grid-dashboard-widget-dashboards');
@@ -259,7 +262,7 @@ Ext.extend(MODx.panel.DashboardWidget,MODx.FormPanel,{
     }
     ,success: function(o) {
         if (Ext.isEmpty(this.config.record) || Ext.isEmpty(this.config.record.id)) {
-            location.href = '?a='+MODx.action['system/dashboards/widget/update']+'&id='+o.result.object.id;
+            MODx.loadPage('system/dashboards/widget/update', 'id='+o.result.object.id);
         } else {
             Ext.getCmp('modx-btn-save').setDisabled(false);
             var g = Ext.getCmp('modx-grid-dashboard-widget-dashboards');
@@ -274,8 +277,8 @@ MODx.grid.DashboardWidgetDashboards = function(config) {
     config = config || {};
     Ext.applyIf(config,{
         id: 'modx-grid-dashboard-widget-dashboards'
-        ,url: MODx.config.connectors_url+'system/dashboard.php'
-        ,action: 'getList'
+        ,url: MODx.config.connector_url
+        ,action: 'system/dashboard/getList'
         ,fields: ['id','name','description']
         ,autoHeight: true
         ,primaryKey: 'widget'
@@ -296,13 +299,13 @@ Ext.extend(MODx.grid.DashboardWidgetDashboards,MODx.grid.LocalGrid);
 Ext.reg('modx-grid-dashboard-widget-dashboards',MODx.grid.DashboardWidgetDashboards);
 
 
-
+/* seems unused */
 MODx.window.WidgetAddDashboard = function(config) {
     config = config || {};
     this.ident = config.ident || 'dbugadd'+Ext.id();
     Ext.applyIf(config,{
         title: _('widget_place')
-        ,frame: true
+        // ,frame: true
         ,id: 'modx-window-widget-add-dashboard'
         ,fields: [{
             xtype: 'modx-combo-dashboard'

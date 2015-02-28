@@ -70,6 +70,16 @@ class modDbRegister extends modRegister {
     }
 
     /**
+     * Clear the register messages.
+     *
+     * {@inheritdoc}
+     */
+    public function clear($topic) {
+        $result = $this->modx->removeCollection('modDbRegisterMessage', array('topic' => $topic));
+        return (bool)$result;
+    }
+
+    /**
      * This implementation supports the following options and default behavior:
      * <ul>
      * <li>msg_limit: Only poll until the specified limit of messages has
@@ -95,12 +105,12 @@ class modDbRegister extends modRegister {
         $messages = array();
         $topicMessages = array();
         $msgLimit = isset($options['msg_limit']) ? intval($options['msg_limit']) : 5;
-        $timeLimit = isset($options['time_limit']) ? intval($options['time_limit']) : ini_get('time_limit');
+        $timeLimit = isset($options['time_limit']) ? intval($options['time_limit']) : ini_get('max_execution_time');
         $pollLimit = isset($options['poll_limit']) ? intval($options['poll_limit']) : 0;
         $pollInterval = isset($options['poll_interval']) ? intval($options['poll_interval']) : 0;
         $removeRead = isset($options['remove_read']) ? (boolean) $options['remove_read'] : true;
         $includeKeys = isset($options['include_keys']) ? (boolean) $options['include_keys'] : false;
-        $startTime = $this->modx->getMicroTime();
+        $startTime = microtime(true);
         $time = $timeLimit <= 0 ? -1 : $startTime;
         $expires = $startTime + $timeLimit;
         $msgCount = 0;
@@ -130,7 +140,7 @@ class modDbRegister extends modRegister {
                         if (!$includeKeys) {
                             $topicMessages[] = $newMsg;
                         } else {
-                            $topicMessages[$msg] = $newMsg;
+                            $topicMessages[$msg->id] = $newMsg;
                         }
                         $msgCount++;
                     } else {
@@ -146,7 +156,7 @@ class modDbRegister extends modRegister {
                     $messages = array_merge($messages, $topicMessages);
                 }
             }
-            $time = $this->modx->getMicroTime();
+            $time = microtime(true);
         }
         return $messages;
     }
@@ -236,7 +246,7 @@ class modDbRegister extends modRegister {
                             case 'php' :
                             default :
                                 $timestamp = isset($options['delay']) ? time() + intval($options['delay']) : time();
-                                $expires = isset($options['ttl']) ? time() + intval($options['ttl']) : 0;
+                                $expires = isset($options['ttl']) && intval($options['ttl']) ? time() + intval($options['ttl']) : 0;
                                 $kill = isset($options['kill']) ? (boolean) $options['kill'] : false;
                                 if (!is_int($msgIdx)) {
                                     $msgKey = $msgIdx;

@@ -2,7 +2,7 @@
 /*
  * MODX Revolution
  *
- * Copyright 2006-2012 by MODX, LLC.
+ * Copyright 2006-2015 by MODX, LLC.
  * All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -49,7 +49,7 @@ class modOutputFilter {
     /**
      * Filters the output
      * 
-     * @param mixed $element The element to filter
+     * @param modElement $element The element to filter
      */
     public function filter(&$element) {
         $usemb = function_exists('mb_strlen') && (boolean)$this->modx->getOption('use_multibyte',null,false);
@@ -126,6 +126,12 @@ class modOutputFilter {
                         case 'islowerthan':
                             $condition[]= intval(($output < $m_val));
                             break;
+                        case 'contains':
+                            $condition[]= intval(stripos($output, $m_val) !== false);
+                            break;
+                        case 'containsnot':
+                            $condition[]= intval(stripos($output, $m_val) === false);;
+                            break;
                         case 'ismember':
                         case 'memberof':
                         case 'mo': /* Is Member Of  (same as inrole but this one can be stringed as a conditional) */
@@ -133,11 +139,12 @@ class modOutputFilter {
                                 $output= $this->modx->user->get('id');
                             }
                             $grps= (strlen($m_val) > 0) ? explode(',', $m_val) : array ();
+                            /** @var $user modUser */
                             $user = $this->modx->getObject('modUser',$output);
                             if ($user && is_object($user) && $user instanceof modUser) {
-                                $condition[]= $user->isMember($grps);
+                                $condition[]= (int) $user->isMember($grps);
                             } else {
-                                $condition[] = false;
+                                $condition[] = 0;
                             }
                             break;
                         case 'or':
@@ -147,30 +154,45 @@ class modOutputFilter {
                             $condition[]= "&&";
                             break;
                         case 'hide':
-                            $m_con = intval(eval("return (" . join(' ', $condition) . ");"));
-                            if ($m_con) {
-                                $output= null;
-                            }
+                            $conditional = join(' ', $condition);
+                            try {
+                                $m_con = @eval("return (" . $conditional . ");");
+                                $m_con = intval($m_con);
+                                if ($m_con) {
+                                    $output= null;
+                                }
+                            } catch (Exception $e) {}
                             break;
                         case 'show':
-                            $m_con = intval(eval("return (" . join(' ', $condition) . ");"));
-                            if (!$m_con) {
-                                $output= null;
-                            }
+                            $conditional = join(' ', $condition);
+                            try {
+                                $m_con = @eval("return (" . $conditional . ");");
+                                $m_con = intval($m_con);
+                                if (!$m_con) {
+                                    $output= null;
+                                }
+                            } catch (Exception $e) {}
                             break;
                         case 'then':
-                            $m_con = intval(eval("return (" . join(' ', $condition) . ");"));
-                            if ($m_con) {
-                                $output= $m_val;
-                            } else {
-                                $output= null;
-                            }
+                            $output = null;
+                            $conditional = join(' ', $condition);
+                            try {
+                                $m_con = @eval("return (" . $conditional . ");");
+                                $m_con = intval($m_con);
+                                if ($m_con) {
+                                    $output= $m_val;
+                                }
+                            } catch (Exception $e) {}
                             break;
                         case 'else':
-                            $m_con = intval(eval("return (" . join(' ', $condition) . ");"));
-                            if (!$m_con) {
-                                $output= $m_val;
-                            }
+                            $conditional = join(' ', $condition);
+                            try {
+                                $m_con = @eval("return (" . $conditional . ");");
+                                $m_con = intval($m_con);
+                                if (!$m_con) {
+                                    $output= $m_val;
+                                }
+                            } catch (Exception $e) {}
                             break;
                         case 'select':
                             $raw= explode("&", $m_val);
@@ -296,15 +318,41 @@ class modOutputFilter {
                             break;
                         case 'ellipsis':
                             $limit= intval($m_val) ? intval($m_val) : 100;
+                            $pad = $this->modx->getOption('ellipsis_filter_pad',null,'&#8230;');
 
                             /* ensure that filter correctly counts special chars */
-                            $str = html_entity_decode($output,ENT_COMPAT,$encoding);
-                            if ($usemb) {
-                                if (mb_strlen($str,$encoding) > $limit) {
-                                    $output = mb_substr($str,0,$limit,$encoding).'&#8230;';
+                            $output = html_entity_decode($output,ENT_COMPAT,$encoding);
+                            $len = $usemb ? mb_strlen($output,$encoding) : strlen($output);
+                            if ($limit > $len) $limit = $len;
+                            if ($limit < 0) $limit = 0;
+                            $breakpoint = $usemb ? mb_strpos($output," ",$limit,$encoding) : strpos($output, " ", $limit);
+                            if (false !== $breakpoint) {
+                                if ($breakpoint < $len - 1) {
+                                    $partial = $usemb ? mb_substr($output, 0, $breakpoint,$encoding) : substr($output, 0, $breakpoint);
+                                    $output = $partial . $pad;
                                 }
-                            } else if (strlen($str) > $limit) {
-                                $output = substr($str,0,$limit).'&#8230;';
+                            }
+
+                            $opened = array();
+                            if (preg_match_all("/<(\/?[a-z]+)>?/i", $output, $matches)) {
+                                foreach ($matches[1] as $tag) {
+                                    if (preg_match("/^[a-z]+$/i", $tag, $regs)) {
+                                        $strLower = $usemb ? mb_strtolower($regs[0],$encoding) : strtolower($regs[0]);
+                                        if ($strLower != 'br' || $strLower != 'hr') {
+                                            $opened[] = $regs[0];
+                                        }
+                                    } elseif (preg_match("/^\/([a-z]+)$/i", $tag, $regs)) {
+                                        $tmpArray = array_keys($opened, (string) $regs[1]);
+                                        $tmpVar = array_pop($tmpArray);
+                                        if ($tmpVar !== null) {
+                                            unset($opened[$tmpVar]);
+                                        }
+                                    }
+                                }
+                            }
+                            if ($opened) {
+                                $tagstoclose = array_reverse($opened);
+                                foreach ($tagstoclose as $tag) $output .= "</$tag>";
                             }
                             break;
                         /* #####  Special functions */
@@ -318,19 +366,13 @@ class modOutputFilter {
                             $output = $tag;
                             break;
 
-                        case 'math':
-                            /* Returns the result of an advanced calculation (expensive) */
-                            $filter= preg_replace("~([a-zA-Z\n\r\t\s])~", "", $m_val);
-                            $filter= str_replace('?', $output, $filter);
-                            $output= eval("return " . $filter . ";");
-                            break;
-
                         case 'add':
                         case 'increment':
                         case 'incr':
                             /* Returns input incremented by option (default: +1) */
-                            if (empty($m_val))
+                            if (empty($m_val) && $m_val !== 0 && $m_val !== '0') {
                                 $m_val = 1;
+                            }
                             $output = (float)$output + (float)$m_val;
                             break;
 
@@ -338,24 +380,27 @@ class modOutputFilter {
                         case 'decrement':
                         case 'decr':
                             /* Returns input decremented by option (default: -1) */
-                            if (empty($m_val))
+                            if (empty($m_val) && $m_val !== 0 && $m_val !== '0') {
                                 $m_val = 1;
+                            }
                             $output = (float)$output - (float)$m_val;
                             break;
 
                         case 'multiply':
                         case 'mpy':
                             /* Returns input multiplied by option (default: *2) */
-                            if (empty($m_val))
+                            if (empty($m_val) && $m_val !== 0 && $m_val !== '0') {
                                 $m_val = 1;
+                            }
                             $output = (float)$output * (float)$m_val;
                             break;
 
                         case 'divide':
                         case 'div':
                             /* Returns input divided by option (default: /2) */
-                            if (empty($m_val))
+                            if (empty($m_val)) {
                                 $m_val = 2;
+                            }
                             if (!empty($output)) {
                                 $output = (float)$output / (float)$m_val;
                             } else {
@@ -394,6 +439,7 @@ class modOutputFilter {
                             $output= nl2br($output);
                             break;
 
+                        case 'strftime':
                         case 'date':
                             /* See PHP's strftime - http://www.php.net/manual/en/function.strftime.php */
                             if (empty($m_val))
@@ -493,10 +539,10 @@ class modOutputFilter {
                               $ago[] = $this->modx->lexicon(($agoTS['hours'] > 1 ? 'ago_hours' : 'ago_hour'),array('time' => $agoTS['hours']));
                             }
                             if (!empty($agoTS['minutes']) && empty($agoTS['days']) && empty($agoTS['weeks']) && empty($agoTS['months']) && empty($agoTS['years'])) {
-                              $ago[] = $this->modx->lexicon('ago_minutes',array('time' => $agoTS['minutes']));
+                                $ago[] = $this->modx->lexicon($agoTS['minutes'] == 1 ? 'ago_minute' : 'ago_minutes' ,array('time' => $agoTS['minutes']));
                             }
                             if (empty($ago)) { /* handle <1 min */
-                              $ago[] = $this->modx->lexicon('ago_seconds',array('time' => $agoTS['seconds']));
+                              $ago[] = $this->modx->lexicon('ago_seconds',array('time' => !empty($agoTS['seconds']) ? $agoTS['seconds'] : 0));
                             }
                             $output = implode(', ',$ago);
                             $output = $this->modx->lexicon('ago',array('time' => $output));
@@ -519,29 +565,39 @@ class modOutputFilter {
                             break;
 
                         case 'userinfo':
-                            /* Returns the requested user data (input: userid) */
+                            /* Returns the requested modUser or modUserProfile data (input: user id) */
                             if (!empty($output)) {
                                 $key = (!empty($m_val)) ? $m_val : 'username';
-                                $userInfo= false;
+                                $userInfo= null;
+                                /** @var modUser $user */
                                 if ($user= $this->modx->getObjectGraph('modUser', '{"Profile":{}}', $output)) {
-                                    $userInfo= $user->get(array ('username', 'password'));
-                                    if ($user->getOne('Profile')) {
-                                        $userInfo= array_merge($userInfo, $user->Profile->toArray());
+                                    $userData = array_merge($user->toArray(), $user->Profile->toArray());
+                                    unset($userData['cachepwd'], $userData['salt'], $userData['sessionid'], $userData['password'], $userData['session_stale']);
+                                    if (strpos($key, 'extended.') === 0 && isset($userData['extended'][substr($key, 9)])) {
+                                        $userInfo = $userData['extended'][substr($key, 9)];
+                                    } elseif (strpos($key, 'remote_data.') === 0 && isset($userData['remote_data'][substr($key, 12)])) {
+                                        $userInfo = $userData['remote_data'][substr($key, 12)];
+                                    } elseif (isset($userData[$key])) {
+                                        $userInfo = $userData[$key];
                                     }
                                 }
-                                $output = $userInfo && isset($userInfo[$key]) ? $userInfo[$key] : null;
+                                $output = $userInfo;
+                            } else {
+                                $output = null;
                             }
                             break;
 
                         case 'isloggedin':
-                            /* returns true if user is logged in */
-                            $output= $this->modx->user->isAuthenticated($this->modx->context->get('key'));
+                            /* returns true if user is logged in to the specified context or by default the current context */
+                            $ctxkey = (!empty($m_val)) ? $m_val : $this->modx->context->get('key');
+                            $output= $this->modx->user->isAuthenticated($ctxkey);
                             $output= $output ? true : false;
                             break;
 
                         case 'isnotloggedin':
-                            /* returns true if user is not logged in */
-                            $output= $this->modx->user->isAuthenticated($this->modx->context->get('key'));
+                            /* returns true if user is not logged in to the specified context or by default the current context */
+                            $ctxkey = (!empty($m_val)) ? $m_val : $this->modx->context->get('key');
+                            $output= $this->modx->user->isAuthenticated($ctxkey);
                             $output= $output ? false : true;
                             break;
 
@@ -554,25 +610,67 @@ class modOutputFilter {
 
                         case 'toPlaceholder':
                             $this->modx->toPlaceholder($m_val,$output);
+                            $output = '';
                             break;
                         case 'cssToHead':
                             $this->modx->regClientCSS($output);
+                            $output = '';
                             break;
                         case 'htmlToHead':
                             $this->modx->regClientStartupHTMLBlock($output);
+                            $output = '';
                             break;
                         case 'htmlToBottom':
                             $this->modx->regClientHTMLBlock($output);
+                            $output = '';
                             break;
                         case 'jsToHead':
                             if (empty($m_val)) $m_val = false;
                             $this->modx->regClientStartupScript($output,$m_val);
+                            $output = '';
                             break;
                         case 'jsToBottom':
                             if (empty($m_val)) $m_val = false;
                             $this->modx->regClientScript($output,$m_val);
+                            $output = '';
                             break;
-
+                        case 'in':
+                        case 'IN':
+                        case 'inarray':
+                        case 'inArray':
+                            if (empty($m_val)) $m_val = false;
+                            $haystack = explode(',', $m_val);
+                            $condition[]= intval(in_array($output, $haystack));
+                            break;
+                        case 'tvLabel':
+                            $name = $element->get('name');
+                            if (isset($m_val) && strpos($name, $m_val) === 0) {
+                                $name = substr($name, strlen($m_val));
+                            }
+                            $tv = $this->modx->getObject('modTemplateVar', array('name' => $name));
+                            if (!$tv) {
+                                break;
+                            }
+                            $o_prop = $tv->get('output_properties');
+                            $options = explode('||', $tv->get('elements'));
+                            $lookup = array();
+                            foreach ($options as $o) {
+                                list($name, $value) = explode('==', $o);
+                                $lookup[$value] = $name;
+                            }
+                            if (isset($o_prop['delimiter'])) {
+                                $delimiter = $o_prop['delimiter'];
+                                $values = explode($delimiter, $output);
+                            } else {
+                                $delimiter = '';
+                                $values = array($output);
+                            }
+                            $return_values = array();
+                            foreach ($values as $v) {
+                                $return_values[] = $lookup[$v];
+                            }
+                            $output = implode($delimiter, $return_values);
+                            break;
 
                         /* Default, custom modifier (run snippet with modifier name) */
                         default:
@@ -594,6 +692,8 @@ class modOutputFilter {
                     $this->modx->log(modX::LOG_LEVEL_ERROR,$e->getMessage());
                 }
             }
+            // convert $output to string if there were any processing
+            $output = (string)$output;
         }
     }
 

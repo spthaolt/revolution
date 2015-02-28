@@ -408,7 +408,7 @@ class modMediaSource extends modAccessibleSimpleObject implements modMediaSource
         }
         /** @var array $results Allow manipulation of media source properties via event */
         $results = $this->xpdo->invokeEvent('OnMediaSourceGetProperties',array(
-            'properties' => $this->xpdo->toJson($properties),
+            'properties' => $this->xpdo->toJSON($properties),
         ));
         if (!empty($results)) {
             foreach ($results as $result) {
@@ -669,16 +669,17 @@ class modMediaSource extends modAccessibleSimpleObject implements modMediaSource
 
     /**
      * Allow overriding of checkPolicy to always allow media sources to be loaded
-     * 
+     *
      * @param string|array $criteria
      * @param array $targets
+     * @param modUser $user
      * @return bool
      */
-    public function checkPolicy($criteria, $targets = null) {
+    public function checkPolicy($criteria, $targets = null, modUser $user = null) {
         if ($criteria == 'load') {
             $success = true;
         } else {
-            $success = parent::checkPolicy($criteria,$targets);
+            $success = parent::checkPolicy($criteria,$targets,$user);
         }
         return $success;
     }

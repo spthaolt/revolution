@@ -1,7 +1,3 @@
-Ext.onReady(function() {
-	MODx.load({ xtype: 'modx-page-users' });
-});
-
 /**
  * Loads the users page
  * 
@@ -18,6 +14,7 @@ MODx.page.Users = function(config) {
         }]
         ,buttons: [{
             text: _('help_ex')
+            ,id: 'modx-abtn-help'
             ,handler: MODx.loadHelpPane
         }]
 	});

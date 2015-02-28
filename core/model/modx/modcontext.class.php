@@ -9,7 +9,7 @@
  *
  * @property string $key The key of the context
  * @property string $description The description of the context
- * 
+ *
  * @package modx
  */
 class modContext extends modAccessibleObject {
@@ -48,6 +48,30 @@ class modContext extends modAccessibleObject {
      * @var string $_cacheKey
      */
     protected $_cacheKey= '[contextKey]/context';
+
+    /**
+     * Prepare and execute a PDOStatement to retrieve data needed for $aliasMap and $resourceMap.
+     *
+     * @static
+     * @param modContext &$context A reference to a specific modContext instance.
+     * @return PDOStatement|bool A PDOStatement, prepared and executed, with the map data, or false
+     * if the statement could not be prepared or executed.
+     */
+    public static function getResourceCacheMapStmt(&$context) {
+        return false;
+    }
+
+    /**
+     * Prepare and execute a PDOStatement to retrieve data needed for $webLinkMap.
+     *
+     * @static
+     * @param modContext &$context A reference to a specific modContext instance.
+     * @return PDOStatement|bool A PDOStatement, prepared and executed, with the map data, or false
+     * if the statement could not be prepared or executed.
+     */
+    public static function getWebLinkCacheMapStmt(&$context) {
+        return false;
+    }
 
     /**
      * Prepare a context for use.
@@ -197,6 +221,9 @@ class modContext extends modAccessibleObject {
         $url = '';
         $found = false;
         if ($id= intval($id)) {
+            if ($this->config === null) {
+                $this->prepare();
+            }
             if (is_object($this->xpdo->context) && $this->get('key') !== $this->xpdo->context->get('key')) {
                 $config = array_merge($this->xpdo->_systemConfig, $this->config, $this->xpdo->_userConfig, $options);
                 if ($scheme === -1 || $scheme === '' || strpos($scheme, 'abs') !== false) {
@@ -207,11 +234,11 @@ class modContext extends modAccessibleObject {
             }
 
             if ($config['friendly_urls'] == 1) {
-                if ($id == $config['site_start']) {
+                if ((integer) $id === (integer) $config['site_start']) {
                     $alias= ($scheme === '' || $scheme === -1) ? $config['base_url'] : '';
                     $found= true;
                 } else {
-                    $alias= array_search($id, $this->aliasMap);
+                    $alias= $this->getResourceURI($id);
                     if (!$alias) {
                         $alias= '';
                         $this->xpdo->log(xPDO::LOG_LEVEL_WARN, '`' . $id . '` was requested but no alias was located.');
@@ -342,5 +369,41 @@ class modContext extends modAccessibleObject {
             ));
         }
         return $saved;
+    }
+
+    /**
+     * Get and execute a PDOStatement representing data for the aliasMap and resourceMap.
+     *
+     * @return PDOStatement|null
+     */
+    public function getResourceCacheMap() {
+        return $this->xpdo->call('modContext', 'getResourceCacheMapStmt', array(&$this));
+    }
+
+    /**
+     * Get and execute a PDOStatement representing data for the webLinkMap.
+     *
+     * @return PDOStatement|null
+     */
+    public function getWebLinkCacheMap() {
+        return $this->xpdo->call('modContext', 'getWebLinkCacheMapStmt', array(&$this));
+    }
+
+    /**
+     * Get a Resource URI in this Context by id.
+     *
+     * @param string|integer $id The integer id of the Resource.
+     * @return string|bool The URI of the Resource, or false if not found in this Context.
+     */
+    public function getResourceURI($id) {
+        $uri = false;
+        if (isset($this->aliasMap)) {
+            $uri= array_search($id, $this->aliasMap);
+        } else {
+            $query = $this->xpdo->newQuery('modResource', array('id' => $id, 'deleted' => false, 'context_key' => $this->get('key')));
+            $query->select($this->xpdo->getSelectColumns('modResource', '', '', array('uri')));
+            $uri = $this->xpdo->getValue($query->prepare());
+        }
+        return $uri;
     }
 }

@@ -32,12 +32,11 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Get base paths/urls and sanitize incoming paths
-     * 
+     *
      * @param string $path A path to the active directory
      * @return array
      */
-    public function getBases($path) {
-        if (empty($path)) $path = '';
+    public function getBases($path = '') {
         $properties = $this->getProperties();
         $bases = array();
         $path = $this->fileHandler->sanitizePath($path);
@@ -49,7 +48,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         } else {
             $bases['pathAbsolute'] = $bases['path'];
         }
-        
+
         $bases['pathAbsoluteWithPath'] = $bases['pathAbsolute'].ltrim($path,'/');
         if (is_dir($bases['pathAbsoluteWithPath'])) {
             $bases['pathAbsoluteWithPath'] = $this->fileHandler->postfixSlash($bases['pathAbsoluteWithPath']);
@@ -77,16 +76,12 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
      * @return boolean|int
      */
     public function getEditActionId() {
-        $editAction = false;
-        /** @var modAction $act */
-        $act = $this->xpdo->getObject('modAction',array('controller' => 'system/file/edit'));
-        if ($act) { $editAction = $act->get('id'); }
-        return $editAction;
+        return 'system/file/edit';
     }
 
     /**
      * Return an array of files and folders at this current level in the directory structure
-     * 
+     *
      * @param string $path
      * @return array
      */
@@ -96,15 +91,16 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         $bases = $this->getBases($path);
         if (empty($bases['pathAbsolute'])) return array();
         $fullPath = $bases['pathAbsolute'].ltrim($path,'/');
-                
+
         $useMultibyte = $this->getOption('use_multibyte',$properties,false);
         $encoding = $this->getOption('modx_charset',$properties,'UTF-8');
         $hideFiles = !empty($properties['hideFiles']) && $properties['hideFiles'] != 'false' ? true : false;
+        $hideTooltips = !empty($properties['hideTooltips']) && $properties['hideTooltips'] != 'false' ? true : false;
         $editAction = $this->getEditActionId();
 
         $imagesExts = $this->getOption('imageExtensions',$properties,'jpg,jpeg,png,gif');
         $imagesExts = explode(',',$imagesExts);
-        $skipFiles = $this->getOption('skipFiles',$properties,'.svn,.git,_notes,.DS_Store,nbproject,.idea');
+        $skipFiles = $this->getOption('skipFiles',$properties,'.svn,.git,_notes,nbproject,.idea,.DS_Store');
         $skipFiles = explode(',',$skipFiles);
         if ($this->xpdo->getParser()) {
             $this->xpdo->parser->processElementTags('',$skipFiles,true,true);
@@ -112,12 +108,24 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         $skipFiles[] = '.';
         $skipFiles[] = '..';
 
+        $allowedExtensions = $this->getOption('allowedFileTypes', $properties, '');
+        if (is_string($allowedExtensions)) {
+            if (empty($allowedExtensions)) {
+                $allowedExtensions = array();
+            } else {
+                $allowedExtensions = explode(',', $allowedExtensions);
+            }
+        }
+
         $canSave = $this->checkPolicy('save');
         $canRemove = $this->checkPolicy('remove');
         $canCreate = $this->checkPolicy('create');
 
         $directories = array();
+        $dirnames = array();
         $files = array();
+        $filenames = array();
+
         if (!is_dir($fullPath)) return array();
 
         /* iterate through directories */
@@ -143,10 +151,12 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                 if ($this->hasPermission('file_upload') && $canCreate) $cls[] = 'pupload';
                 if ($this->hasPermission('file_create') && $canCreate) $cls[] = 'pcreate';
 
+                $dirnames[] = strtoupper($fileName);
                 $directories[$fileName] = array(
                     'id' => $bases['urlRelative'].rtrim($fileName,'/').'/',
                     'text' => $fileName,
                     'cls' => implode(' ',$cls),
+                    'iconCls' => 'icon icon-folder',
                     'type' => 'dir',
                     'leaf' => false,
                     'path' => $bases['pathAbsoluteWithPath'].$fileName,
@@ -159,12 +169,13 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
             /* get files in current dir */
             if ($file->isFile() && !$hideFiles && $this->hasPermission('file_list')) {
-                $ext = pathinfo($filePathName,PATHINFO_EXTENSION);
-                $ext = $useMultibyte ? mb_strtolower($ext,$encoding) : strtolower($ext);
+                $ext = pathinfo($filePathName, PATHINFO_EXTENSION);
+                $ext = $useMultibyte ? mb_strtolower($ext, $encoding) : strtolower($ext);
+                if (!empty($allowedExtensions) && !in_array($ext, $allowedExtensions)) {
+                    continue;
+                }
 
                 $cls = array();
-                $cls[] = 'icon-file';
-                $cls[] = 'icon-'.$ext;
 
                 if (!empty($properties['currentFile']) && rawurldecode($properties['currentFile']) == $fullPath.$fileName && $properties['currentAction'] == $editAction) {
                     $cls[] = 'active-node';
@@ -173,44 +184,51 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                 if ($this->hasPermission('file_remove') && $canRemove) $cls[] = 'premove';
                 if ($this->hasPermission('file_update') && $canSave) $cls[] = 'pupdate';
 
-                if (!$file->isWritable()) {
-                    $cls[] = 'icon-lock';
-                }
                 $encFile = rawurlencode($fullPath.$fileName);
                 $page = !empty($editAction) ? '?a='.$editAction.'&file='.$bases['urlRelative'].$fileName.'&wctx='.$this->ctx->get('key').'&source='.$this->get('id') : null;
-                $url = ($bases['urlIsRelative'] ? $bases['urlRelative'] : $bases['url']).$fileName;
+                $url = $bases['urlRelative'] . $fileName;
 
                 /* get relative url from manager/ */
                 $fromManagerUrl = $bases['url'].trim(str_replace('//','/',$path.$fileName),'/');
                 $fromManagerUrl = ($bases['urlIsRelative'] ? '../' : '').$fromManagerUrl;
+
+                $filenames[] = strtoupper($fileName);
                 $files[$fileName] = array(
                     'id' => $bases['urlRelative'].$fileName,
                     'text' => $fileName,
                     'cls' => implode(' ',$cls),
+                    'iconCls' => 'icon icon-file icon-'.$ext . ($file->isWritable() ? '' : ' icon-lock'),
                     'type' => 'file',
                     'leaf' => true,
-                    'qtip' => in_array($ext,$imagesExts) ? '<img src="'.$fromManagerUrl.'" alt="'.$fileName.'" />' : '',
+                    // 'qtip' => in_array($ext,$imagesExts) ? '<img src="'.$fromManagerUrl.'" alt="'.$fileName.'" />' : '',
                     'page' => $this->fileHandler->isBinary($filePathName) ? $page : null,
                     'perms' => $octalPerms,
                     'path' => $bases['pathAbsoluteWithPath'].$fileName,
                     'pathRelative' => $bases['pathRelative'].$fileName,
                     'directory' => $bases['path'],
                     'url' => $bases['url'].$url,
-                    'urlAbsolute' => $bases['urlAbsolute'].ltrim($url,'/'),
+                    'urlAbsolute' => $bases['urlAbsoluteWithPath'].ltrim($fileName,'/'),
                     'file' => $encFile,
                     'menu' => array(),
                 );
                 $files[$fileName]['menu'] = array('items' => $this->getListContextMenu($file,$files[$fileName]));
+
+                // trough tree config we can request a tree without image-preview tooltips, don't do any work if not necessary
+                if (!$hideTooltips) {
+                    $files[$fileName]['qtip'] = in_array($ext,$imagesExts) ? '<img src="'.$fromManagerUrl.'" alt="'.$fileName.'" />' : '';
+                }
             }
         }
 
         $ls = array();
         /* now sort files/directories */
-        ksort($directories);
+        array_multisort($dirnames, SORT_ASC, SORT_STRING, $directories);
+        // uksort($directories, 'strnatcasecmp');
         foreach ($directories as $dir) {
             $ls[] = $dir;
         }
-        ksort($files);
+        array_multisort($filenames, SORT_ASC, SORT_STRING, $files);
+        // uksort($files, 'strnatcasecmp');
         foreach ($files as $file) {
             $ls[] = $file;
         }
@@ -220,7 +238,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Get the context menu items for a specific object in the list view
-     * 
+     *
      * @param DirectoryIterator $file
      * @param array $fileArray
      * @return array
@@ -238,6 +256,10 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                     $menu[] = array(
                         'text' => $this->xpdo->lexicon('file_edit'),
                         'handler' => 'this.editFile',
+                    );
+                    $menu[] = array(
+                        'text' => $this->xpdo->lexicon('quick_update_file'),
+                        'handler' => 'this.quickUpdateFile',
                     );
                 }
                 $menu[] = array(
@@ -292,6 +314,10 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                 $menu[] = array(
                     'text' => $this->xpdo->lexicon('file_create'),
                     'handler' => 'this.createFile',
+                );
+                $menu[] = array(
+                    'text' => $this->xpdo->lexicon('quick_create_file'),
+                    'handler' => 'this.quickCreateFile',
                 );
             }
             if ($this->hasPermission('directory_remove') && $canRemove) {
@@ -348,13 +374,19 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
             return false;
         }
 
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerDirCreate',array(
+            'directory' => $newDirectoryPath,
+            'source' => &$this,
+        ));
+
         $this->xpdo->logManagerAction('directory_create','',$newDirectory->getPath());
         return true;
     }
 
     /**
      * Remove a folder at the specified location
-     * 
+     *
      * @param string $path
      * @return boolean
      */
@@ -363,7 +395,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         /** @var modDirectory $directory */
         $path = $this->fileHandler->postfixSlash($path);
         $directory = $this->fileHandler->make($path);
-        
+
         /* validate and check permissions on directory */
         if (!($directory instanceof modDirectory)) {
             $this->addError('path',$this->xpdo->lexicon('file_folder_err_invalid'));
@@ -379,6 +411,12 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         if ($result == false) {
             $this->addError('path',$this->xpdo->lexicon('file_folder_err_remove'));
         }
+
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerDirRemove',array(
+            'directory' => $path,
+            'source' => &$this,
+        ));
 
         $this->xpdo->logManagerAction('directory_remove','',$directory->getPath());
         return true;
@@ -409,13 +447,19 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         /* sanitize new path */
         $newPath = $this->fileHandler->sanitizePath($newName);
         $newPath = $this->fileHandler->postfixSlash($newPath);
-        $newPath = dirname($oldPath).DIRECTORY_SEPARATOR.$newPath;
+        $newPath = dirname($oldPath).'/'.$newPath;
 
         /* rename the dir */
         if (!$oldDirectory->rename($newPath)) {
             $this->addError('name',$this->xpdo->lexicon('file_folder_err_rename'));
             return false;
         }
+
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerDirRename',array(
+            'directory' => $newPath,
+            'source' => &$this,
+        ));
 
         $this->xpdo->logManagerAction('directory_rename','',$oldDirectory->getPath());
         return true;
@@ -446,13 +490,19 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
         /* sanitize new path */
         $newPath = $this->fileHandler->sanitizePath($newName);
-        $newPath = dirname($oldPath).DIRECTORY_SEPARATOR.$newPath;
+        $newPath = dirname($oldPath).'/'.$newPath;
 
         /* rename the file */
         if (!$oldFile->rename($newPath)) {
             $this->addError('name',$this->xpdo->lexicon('file_folder_err_rename'));
             return false;
         }
+
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerFileRename',array(
+            'path' => $newPath,
+            'source' => &$this,
+        ));
 
         $this->xpdo->logManagerAction('file_rename','',$oldFile->getPath());
         return true;
@@ -461,7 +511,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Get the contents of a specified file
-     * 
+     *
      * @param string $objectPath
      * @return array
      */
@@ -498,7 +548,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Remove a file
-     * 
+     *
      * @param string $objectPath
      * @return boolean
      */
@@ -532,6 +582,12 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
             return false;
         }
 
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerFileRemove',array(
+            'path' => $fullPath,
+            'source' => &$this,
+        ));
+
         /* log manager action */
         $this->xpdo->logManagerAction('file_remove','',$file->getPath());
         return true;
@@ -562,6 +618,12 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         $file->setContent($content);
         $file->save();
 
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerFileUpdate',array(
+            'path' => $fullPath,
+            'source' => &$this,
+        ));
+
         $this->xpdo->logManagerAction('file_update','',$file->getPath());
 
         return rawurlencode($file->getPath());
@@ -587,12 +649,18 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         /* write file */
         $file->setContent($content);
         $file->create($content);
-        
+
         /* verify file exists */
         if (!$file->exists()) {
             $this->addError('file',$this->xpdo->lexicon('file_err_nf').': '.$fullPath);
             return false;
         }
+
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerFileCreate',array(
+            'path' => $fullPath,
+            'source' => &$this,
+        ));
 
         $this->xpdo->logManagerAction('file_create','',$file->getPath());
 
@@ -601,7 +669,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Upload files to a specific folder on the file system
-     * 
+     *
      * @param string $container
      * @param array $objects
      * @return boolean
@@ -634,7 +702,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         foreach ($objects as $file) {
             if ($file['error'] != 0) continue;
             if (empty($file['name'])) continue;
-            $ext = @pathinfo($file['name'],PATHINFO_EXTENSION);
+            $ext = pathinfo($file['name'],PATHINFO_EXTENSION);
             $ext = strtolower($ext);
 
             if (empty($ext) || !in_array($ext,$allowedFileTypes)) {
@@ -643,7 +711,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                 )));
                 continue;
             }
-            $size = @filesize($file['tmp_name']);
+            $size = filesize($file['tmp_name']);
 
             if ($size > $maxFileSize) {
                 $this->addError('path',$this->xpdo->lexicon('file_err_too_large',array(
@@ -656,7 +724,15 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
             $newPath = $this->fileHandler->sanitizePath($file['name']);
             $newPath = $directory->getPath().$newPath;
 
-            if (!@move_uploaded_file($file['tmp_name'],$newPath)) {
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerBeforeUpload',array(
+            'files' => &$objects,
+            'file' => &$file,
+            'directory' => $container,
+            'source' => &$this,
+        ));
+
+            if (!move_uploaded_file($file['tmp_name'],$newPath)) {
                 $this->addError('path',$this->xpdo->lexicon('file_err_upload'));
                 continue;
             }
@@ -671,12 +747,12 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
         $this->xpdo->logManagerAction('file_upload','',$directory->getPath());
 
-        return true;
+        return !$this->hasErrors();
     }
 
     /**
      * Chmod a specific folder
-     * 
+     *
      * @param string $directoryPath
      * @param string $mode
      * @return boolean
@@ -752,6 +828,14 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         if (!$success) {
             $this->addError('from',$this->xpdo->lexicon('file_err_chmod'));
         }
+
+        /* invoke event */
+        $this->xpdo->invokeEvent('OnFileManagerMoveObject',array(
+            'from' => $fromObject->getPath(),
+            'to' => $toObject->getPath(),
+            'source' => &$this,
+        ));
+
         return $success;
     }
 
@@ -775,17 +859,26 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         $imageExtensions = explode(',',$imageExtensions);
         $use_multibyte = $this->ctx->getOption('use_multibyte', false);
         $encoding = $this->ctx->getOption('modx_charset', 'UTF-8');
-        $allowedFileTypes = $this->getOption('allowedFileTypes',$properties,'');
-        $allowedFileTypes = !empty($allowedFileTypes) && is_string($allowedFileTypes) ? explode(',',$allowedFileTypes) : $allowedFileTypes;
+        $allowedFileTypes = $this->getOption('allowedFileTypes', $properties, '');
+        $editAction = $this->getEditActionId();
+        if (is_string($allowedFileTypes)) {
+            if (empty($allowedFileTypes)) {
+                $allowedFileTypes = array();
+            } else {
+                $allowedFileTypes = explode(',', $allowedFileTypes);
+            }
+        }
         $thumbnailType = $this->getOption('thumbnailType',$properties,'png');
         $thumbnailQuality = $this->getOption('thumbnailQuality',$properties,90);
-        $skipFiles = $this->getOption('skipFiles',$properties,'.svn,.git,_notes,.DS_Store');
+        $skipFiles = $this->getOption('skipFiles',$properties,'.svn,.git,_notes,nbproject,.idea,.DS_Store');
         $skipFiles = explode(',',$skipFiles);
         $skipFiles[] = '.';
         $skipFiles[] = '..';
 
         /* iterate */
         $files = array();
+        $filenames = array();
+
         if (!is_dir($fullPath)) {
             $this->addError('dir',$this->xpdo->lexicon('file_folder_err_ns').$fullPath);
             return array();
@@ -803,17 +896,21 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                 $fileExtension = pathinfo($filePathName,PATHINFO_EXTENSION);
                 $fileExtension = $use_multibyte ? mb_strtolower($fileExtension,$encoding) : strtolower($fileExtension);
 
-                if (!empty($allowedFileTypes) && !in_array($fileExtension,$allowedFileTypes)) continue;
+                if (!empty($allowedFileTypes) && !in_array($fileExtension, $allowedFileTypes)) {
+                    continue;
+                }
 
                 $filesize = @filesize($filePathName);
-                $url = ltrim($dir.$fileName,'/');
+                $url = urlencode(ltrim($dir.$fileName,'/'));
+                $page = !empty($editAction) ? '?a='.$editAction.'&file='.$bases['urlRelative'].$fileName.'&wctx='.$this->ctx->get('key').'&source='.$this->get('id') : null;
 
                 /* get thumbnail */
                 if (in_array($fileExtension,$imageExtensions)) {
+                    $preview = 1;
                     $imageWidth = $this->ctx->getOption('filemanager_image_width', 400);
                     $imageHeight = $this->ctx->getOption('filemanager_image_height', 300);
-                    $thumbHeight = $this->ctx->getOption('filemanager_thumb_height', 60);
-                    $thumbWidth = $this->ctx->getOption('filemanager_thumb_width', 80);
+                    $thumbWidth = $this->ctx->getOption('filemanager_thumb_width', 100);
+                    $thumbHeight = $this->ctx->getOption('filemanager_thumb_height', 80);
 
                     $size = @getimagesize($filePathName);
                     if (is_array($size)) {
@@ -832,6 +929,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                         'h' => $thumbHeight,
                         'f' => $thumbnailType,
                         'q' => $thumbnailQuality,
+                        'far' => '1',
                         'HTTP_MODAUTH' => $modAuth,
                         'wctx' => $this->ctx->get('key'),
                         'source' => $this->get('id'),
@@ -849,19 +947,22 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                     $thumb = $this->ctx->getOption('connectors_url', MODX_CONNECTORS_URL).'system/phpthumb.php?'.urldecode($thumbQuery);
                     $image = $this->ctx->getOption('connectors_url', MODX_CONNECTORS_URL).'system/phpthumb.php?'.urldecode($imageQuery);
                 } else {
+                    $preview = 0;
+                    $size = null;
                     $thumb = $image = $this->ctx->getOption('manager_url', MODX_MANAGER_URL).'templates/default/images/restyle/nopreview.jpg';
-                    $thumbWidth = $imageWidth = $this->ctx->getOption('filemanager_thumb_width', 80);
-                    $thumbHeight = $imageHeight = $this->ctx->getOption('filemanager_thumb_height', 60);
+                    $thumbWidth = $imageWidth = $this->ctx->getOption('filemanager_thumb_width', 100);
+                    $thumbHeight = $imageHeight = $this->ctx->getOption('filemanager_thumb_height', 80);
                 }
                 $octalPerms = substr(sprintf('%o', $file->getPerms()), -4);
 
-                $files[] = array(
+                $filenames[] = strtoupper($fileName);
+                $files[$fileName] = array(
                     'id' => $bases['urlAbsoluteWithPath'].$fileName,
                     'name' => $fileName,
                     'cls' => 'icon-'.$fileExtension,
                     'image' => $image,
-                    'image_width' => $imageWidth,
-                    'image_height' => $imageHeight,
+                    'image_width' => is_array($size) ? $size[0] : $imageWidth,
+                    'image_height' => is_array($size) ? $size[1] : $imageHeight,
                     'thumb' => $thumb,
                     'thumb_width' => $thumbWidth,
                     'thumb_height' => $thumbHeight,
@@ -870,19 +971,30 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
                     'fullRelativeUrl' => rtrim($bases['url']).ltrim($dir.$fileName,'/'),
                     'ext' => $fileExtension,
                     'pathname' => str_replace('//','/',$filePathName),
+                    'pathRelative' => $bases['pathRelative'].$fileName,
                     'lastmod' => $file->getMTime(),
+                    'preview' => $preview,
                     'disabled' => false,
                     'perms' => $octalPerms,
                     'leaf' => true,
+                    'page' => $this->fileHandler->isBinary($filePathName) ? $page : null,
                     'size' => $filesize,
-                    'menu' => array(
-                        array('text' => $this->xpdo->lexicon('file_remove'),'handler' => 'this.removeFile'),
-                    ),
+                    'menu' => array(),
                 );
+                $files[$fileName]['menu'] = $this->getListContextMenu($file, $files[$fileName]);
             }
         }
-        return $files;
+
+        $ls = array();
+        array_multisort($filenames, SORT_ASC, SORT_STRING, $files);
+
+        foreach ($files as $file) {
+            $ls[] = $file;
+        }
+
+        return $ls;
     }
+
     /**
      * Get the name of this source type
      * @return string
@@ -903,7 +1015,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Get the default properties for the filesystem media source type.
-     * 
+     *
      * @return array
      */
     public function getDefaultProperties() {
@@ -996,9 +1108,6 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
         $properties = $this->getPropertyList();
         if (!empty($properties['baseUrl'])) {
             $value = $properties['baseUrl'].$value;
-            if (isset($properties['baseUrlRelative']) && !empty($properties['baseUrlRelative'])) {
-                $value = $this->xpdo->context->getOption('base_url',null,MODX_BASE_URL).$value;
-            }
         }
         return $value;
     }
@@ -1006,7 +1115,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Get the base path for this source. Only applicable to sources that are streams.
-     * 
+     *
      * @param string $object An optional file to find the base path of
      * @return string
      */
@@ -1017,7 +1126,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Get the base URL for this source. Only applicable to sources that are streams.
-     * 
+     *
      * @param string $object An optional object to find the base url of
      * @return string
      */
@@ -1028,7 +1137,7 @@ class modFileMediaSource extends modMediaSource implements modMediaSourceInterfa
 
     /**
      * Get the absolute URL for a specified object. Only applicable to sources that are streams.
-     * 
+     *
      * @param string $object
      * @return string
      */

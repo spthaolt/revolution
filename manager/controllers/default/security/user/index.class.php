@@ -22,6 +22,10 @@ class SecurityUserManagerController extends modManagerController {
         $mgrUrl = $this->modx->getOption('manager_url',null,MODX_MANAGER_URL);
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.js');
         $this->addJavascript($mgrUrl.'assets/modext/sections/security/user/list.js');
+        $this->addHtml("<script>
+            Ext.onReady(function() {
+                MODx.add('modx-page-users');
+            });</script>");
     }
 
     /**
@@ -45,7 +49,7 @@ class SecurityUserManagerController extends modManagerController {
      * @return string
      */
     public function getTemplateFile() {
-        return 'security/user/list.tpl';
+        return '';
     }
 
     /**
@@ -54,5 +58,13 @@ class SecurityUserManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('user');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Users';
     }
 }

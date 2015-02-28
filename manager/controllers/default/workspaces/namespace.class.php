@@ -25,6 +25,10 @@ class WorkspacesNamespaceManagerController extends modManagerController {
     public function loadCustomCssJs() {
         $this->addJavascript($this->modx->getOption('manager_url').'assets/modext/workspace/namespace/modx.namespace.panel.js');
         $this->addJavascript($this->modx->getOption('manager_url').'assets/modext/workspace/namespace/index.js');
+        $this->addHtml("<script>
+            Ext.onReady(function() {
+                MODx.add('modx-page-namespaces');
+            });</script>");
     }
 
     /**
@@ -36,7 +40,7 @@ class WorkspacesNamespaceManagerController extends modManagerController {
 
     /**
      * Return the pagetitle
-     * 
+     *
      * @return string
      */
     public function getPageTitle() {
@@ -48,7 +52,7 @@ class WorkspacesNamespaceManagerController extends modManagerController {
      * @return string
      */
     public function getTemplateFile() {
-        return 'workspaces/namespace/index.tpl';
+        return '';
     }
 
     /**
@@ -57,5 +61,13 @@ class WorkspacesNamespaceManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('workspace','namespace');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Namespaces';
     }
 }

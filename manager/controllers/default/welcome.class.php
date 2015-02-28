@@ -17,7 +17,7 @@
      * @var null|modDashboard $dashboard
      */
     public $dashboard = null;
-    
+
     /**
      * Check for any permissions or requirements to load page
      * @return bool
@@ -31,7 +31,6 @@
      * @return void
      */
     public function loadCustomCssJs() {
-        $this->addJavascript($this->modx->getOption('manager_url').'assets/modext/widgets/security/modx.grid.user.recent.resource.js');
         $this->addJavascript($this->modx->getOption('manager_url').'assets/modext/widgets/modx.panel.welcome.js');
         $this->addJavascript($this->modx->getOption('manager_url').'assets/modext/sections/welcome.js');
         $this->addHtml('<script type="text/javascript">
@@ -58,33 +57,12 @@ Ext.onReady(function() { MODx.loadWelcomePanel("'.$url.'"); });
      */
     public function process(array $scriptProperties = array()) {
         $placeholders = array();
-        
+
         $this->checkForWelcomeScreen();
 
-        $this->dashboard = $this->getDashboard();
+        $this->dashboard = $this->modx->user->getDashboard();
         $placeholders['dashboard'] = $this->dashboard->render($this);
         return $placeholders;
-    }
-
-    /**
-     * Get the active Dashboard for the User
-     * @return modDashboard|null
-     */
-    public function getDashboard() {
-        $this->modx->loadClass('modDashboard');
-
-        /** @var modUserGroup $userGroup */
-        $userGroup = $this->modx->user->getOne('PrimaryGroup');
-        if ($userGroup) {
-            /** @var modDashboard $dashboard */
-            $dashboard = $userGroup->getOne('Dashboard');
-            if (empty($dashboard)) {
-                $dashboard = modDashboard::getDefaultDashboard($this->modx);
-            }
-        } else {
-            $dashboard = modDashboard::getDefaultDashboard($this->modx);
-        }
-        return $dashboard;
     }
 
     /**

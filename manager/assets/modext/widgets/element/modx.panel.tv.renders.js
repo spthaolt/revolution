@@ -28,11 +28,13 @@ MODx.panel.ImageTV = function(config) {
             ,browserEl: 'tvbrowser'+config.tv
             ,name: 'tvbrowser'+config.tv
             ,id: 'tvbrowser'+config.tv
+            ,triggerClass: 'x-form-image-trigger'
             ,value: config.relativeValue
-            ,hideFiles: true
+            // ,hideFiles: true
             ,source: config.source || 1
             ,allowedFileTypes: config.allowedFileTypes || ''
             ,openTo: config.openTo || ''
+            ,hideSourceCombo: true
             ,listeners: {
                 'select': {fn:function(data) {
                     Ext.getCmp('tv'+this.config.tv).setValue(data.relativeUrl);
@@ -78,11 +80,12 @@ MODx.panel.FileTV = function(config) {
             ,name: 'tvbrowser'+config.tv
             ,id: 'tvbrowser'+config.tv
             ,value: config.relativeValue
-            ,hideFiles: true
+            // ,hideFiles: true
             ,source: config.source || 1
             ,allowedFileTypes: config.allowedFileTypes || ''
             ,wctx: config.wctx || 'web'
             ,openTo: config.openTo || ''
+            ,hideSourceCombo: true
             ,listeners: {
                 'select': {fn:function(data) {
                     Ext.getCmp('tv'+this.config.tv).setValue(data.relativeUrl);

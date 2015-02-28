@@ -1,14 +1,16 @@
 <?php
 /**
- * TV Widget Swedish lexicon topic
+ * TV Widget English lexicon topic
  *
- * @language sv
+ * @language en
  * @package modx
  * @subpackage lexicon
  */
 $_lang['attributes'] = 'Attribut';
 $_lang['capitalize'] = 'Kapitalisera';
 $_lang['checkbox'] = 'Kryssruta';
+$_lang['checkbox_columns'] = 'Kolumner';
+$_lang['checkbox_columns_desc'] = 'Antalet kolumner som kryssrutor ska visas i.';
 $_lang['class'] = 'Klass';
 $_lang['combo_allowaddnewdata'] = 'Tillåt nya poster';
 $_lang['combo_allowaddnewdata_desc'] = 'Om denna sätts till "Ja" kan nya poster, som inte redan finns i listan, läggas till. Standard är "Nej".';
@@ -16,6 +18,8 @@ $_lang['combo_forceselection'] = 'Tvinga urval till lista';
 $_lang['combo_forceselection_desc'] = 'Om ifyllning är aktiverad och om denna sätts till "Ja" kommer bara värden som finns i listan att tillåtas.';
 $_lang['combo_listempty_text'] = 'Text vid tom lista';
 $_lang['combo_listempty_text_desc'] = 'Om ifyllning är aktiverad och användaren skriver in något som inte finns i listan visas denna text.';
+$_lang['combo_listheight'] = 'Listhöjd';
+$_lang['combo_listheight_desc'] = 'Höjden (i pixlar) på själva rullgardinsmenyn. Standard är höjden på comboboxen.';
 $_lang['combo_listwidth'] = 'Listbredd';
 $_lang['combo_listwidth_desc'] = 'Bredden (i pixlar) på själva rullgardinsmenyn. Standard är bredden på comboboxen.';
 $_lang['combo_maxheight'] = 'Maximal höjd';
@@ -36,10 +40,10 @@ $_lang['delim'] = 'Avgränsare';
 $_lang['delimiter'] = 'Avgränsare';
 $_lang['disabled_dates'] = 'Inaktiverade datum';
 $_lang['disabled_dates_desc'] = 'En kommaseparerad lista med "datum" som ska inaktiveras som strängar. Dessa strängar kommer att användas för att dynamiskt bygga ett reguljärt uttryck, så de är mycket kraftfulla. Några exempel:<br />
-- Inaktivera dessa exakta datum: 2003-03-08,2003-09-16<br />
+- Inaktivera dessa exakta datum: 2012-03-08,2012-09-16<br />
 - Inaktivera dessa datum varje år: 03-08,09-16<br />
-- Matcha bara början (användbart om du använder korta årtal): ^03-08<br />
-- Inaktivera varje dag i mars 2006: 03-..-2006<br />
+- Matcha bara början (användbart om du använder korta årtal): ^10-12<br />
+- Inaktivera varje dag i mars 2012: 2012-03-..<br />
 - Inaktivera varje dag i mars alla år: ^03<br />
 Notera att formatet på de datum som läggs till i listan exakt måste matcha hanterarens datumformat. För att stödja reguljära uttryck måste du, om du använder ett datumformat som innehåller punkter (.), undanta punkterna med ett omvänt snedstreck när du begränsar datum.';
 $_lang['disabled_days'] = 'Inaktiverade dagar';
@@ -57,8 +61,8 @@ $_lang['height'] = 'Höjd';
 $_lang['hidden'] = 'Dold';
 $_lang['htmlarea'] = 'HTML-area';
 $_lang['htmltag'] = 'HTML-tagg';
-$_lang['image_align'] = 'Justera';
 $_lang['image'] = 'Bild';
+$_lang['image_align'] = 'Justera';
 $_lang['image_align_list'] = 'ingen,baslinje,toppen,mitten,botten,toppen av texten,absoluta mitten,absoluta botten,vänster,höger';
 $_lang['image_alt'] = 'Alternativtext';
 $_lang['image_border_size'] = 'Ramstorlek';
@@ -70,6 +74,7 @@ $_lang['latest_time'] = 'Senaste klockslag';
 $_lang['latest_time_desc'] = 'Det senaste klockslag som kan väljas.';
 $_lang['listbox'] = 'Listbox (enkelval)';
 $_lang['listbox-multiple'] = 'Listbox (flerval)';
+$_lang['list-multiple-legacy'] = 'Äldre flervalslista';
 $_lang['lower_case'] = 'Gemener';
 $_lang['max_length'] = 'Maximal längd';
 $_lang['min_length'] = 'Minimal längd';
@@ -96,6 +101,8 @@ $_lang['resourcelist_depth'] = 'Djup';
 $_lang['resourcelist_depth_desc'] = 'Anger hur många nivåer neråt som kommer att sökas i databasen när listan med resurser ska hämtas. Standard är 10.';
 $_lang['resourcelist_includeparent'] = 'Inkludera föräldrar';
 $_lang['resourcelist_includeparent_desc'] = 'Om denna sätts till "Ja" kommer resurserna som anges i föräldrafältet att inkluderas i listan.';
+$_lang['resourcelist_limitrelatedcontext'] = 'Begränsa till relaterad kontext';
+$_lang['resourcelist_limitrelatedcontext_desc'] = 'Om denna sätts till "Ja" kommer bara resurser som är relaterade till den nuvarande resursens kontext att inkluderas.';
 $_lang['resourcelist_limit'] = 'Begränsning';
 $_lang['resourcelist_limit_desc'] = 'Det antal resurser som listan kommer att begränsas till. 0 eller inget värde innebär att ingen begränsning görs.';
 $_lang['resourcelist_parents'] = 'Föräldrar';
@@ -115,8 +122,8 @@ $_lang['tag_id'] = 'Tagg-ID';
 $_lang['tag_name'] = 'Tagg-namn';
 $_lang['target'] = 'Mål';
 $_lang['text'] = 'Text';
-$_lang['textarea'] = 'Textarea';
-$_lang['textareamini'] = 'Textarea (liten)';
+$_lang['textarea'] = 'Textruta';
+$_lang['textareamini'] = 'Textruta (liten)';
 $_lang['textbox'] = 'Textbox';
 $_lang['time_increment'] = 'Tidsintervall';
 $_lang['time_increment_desc'] = 'Antal minuter mellan varje klockslag i listan. Standard är 15.';

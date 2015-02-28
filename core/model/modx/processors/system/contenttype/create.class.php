@@ -17,11 +17,17 @@ class modContentTypeCreateProcessor extends modObjectCreateProcessor {
     public $classKey = 'modContentType';
     public $languageTopics = array('content_type');
     public $permission = 'content_types';
-    public $elementType = 'content_type';
+    public $objectType = 'content_type';
 
     public function beforeSet() {
-        $binary = $this->getProperty('binary',false);
-        $this->setProperty('binary',(boolean)$binary);
+        $headers = $this->modx->fromJSON($this->getProperty('headers', '[]'));
+        $this->object->set('headers', $headers);
+
+        $binary = $this->getProperty('binary',null);
+        if ($binary !== null) {
+            $this->object->set('binary', ($binary == 'true'));
+        }
+
         return parent::beforeSet();
     }
 }

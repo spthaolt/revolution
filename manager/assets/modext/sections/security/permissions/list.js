@@ -1,7 +1,3 @@
-Ext.onReady(function() {
-	MODx.add('modx-page-groups-roles');
-});
-
 /**
  * Loads the groups and roles page
  * 
@@ -18,6 +14,7 @@ MODx.page.GroupsRoles = function(config) {
         }]
         ,buttons: [{
             text: _('help_ex')
+            ,id: 'modx-abtn-help'
             ,handler: MODx.loadHelpPane
         }]
 	});

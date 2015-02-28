@@ -1,13 +1,11 @@
 <?php
 /**
- * Dutch language files for Revolution setup
+ * English language files for Revolution 2.0.0 setup
  *
  * @package setup
- * @subpackage lexicon
- * @author Bert Oost, <bertoost85@gmail.com>
  */
 $_lang['additional_css'] = '';
-$_lang['addons'] = 'Add-ons';
+$_lang['addons'] = 'Uitbreidingen';
 $_lang['advanced_options'] = 'Geavanceerde opties';
 $_lang['all'] = 'Alle';
 $_lang['app_description'] = 'CMS en PHP Applicatie Framework';
@@ -17,6 +15,9 @@ $_lang['base_template'] = 'BasisTemplate';
 $_lang['cache_manager_err'] = 'MODX\'s Cache Manager kan niet geladen worden.';
 $_lang['choose_language'] = 'Kies taal';
 $_lang['cleanup_errors_title'] = 'Belangrijk:';
+$_lang['cli_install_failed'] = 'Installatie mislukt! Fouten: [[+errors]]';
+$_lang['cli_no_config_file'] = 'MODX kan geen configuratie bestand vinden (als config.xml) voor jouw CLI installatie. Om MODX Setup te draaien vanaf command line moet je een config xml bestand leveren. Zie de officiele documentatie voor meer informatie.';
+$_lang['cli_tests_failed'] = 'Voor-Installatie Tests Mislukt! Fouten: [[+errors]]';
 $_lang['close'] = 'sluit';
 $_lang['config_file_err_w'] = 'Fout bij schrijven configuratiebestand.';
 $_lang['config_file_perms_notset'] = 'Configuratiebestand rechten zijn niet geupdate. Je kunt de rechten van het configuratiebestand aanpassen om veranderingen te beveiligen.';
@@ -31,9 +32,9 @@ $_lang['connection_collation'] = 'Vergelijking:';
 $_lang['connection_connection_and_login_information'] = 'Database verbinding en inlog informatie';
 $_lang['connection_connection_note'] = 'Vul de naam van de database voor MODX in. Indien deze nog niet bestaat dan zal de installatie deze proberen te maken. Dit zal falen afhankelijk van de MySQL configuratie of de database rechten voor jouw domein/installatie.';
 $_lang['connection_database_host'] = 'Database host:';
-//$_lang['connection_database_info'] = 'Vul nu de inlog data in voor jouw database.';
+$_lang['connection_database_info'] = 'Vul de inlog gegevens van jouw database in.';
 $_lang['connection_database_login'] = 'Database inlognaam:';
-$_lang['connection_database_name'] = 'Databasen naam:';
+$_lang['connection_database_name'] = 'Database naam:';
 $_lang['connection_database_pass'] = 'Database wachtwoord:';
 $_lang['connection_database_type'] = 'Database type:';
 $_lang['connection_default_admin_email'] = 'Admin e-mail:';
@@ -41,7 +42,7 @@ $_lang['connection_default_admin_login'] = 'Admin gebruikersnaam:';
 $_lang['connection_default_admin_note'] = 'Vul nu een aantal details in voor het admin account. Je kunt hier jouw naam en wachtwoord invullen, welke je niet vergeet. Je bent deze nodig om in te loggen in de Admin zodra de installatie is voltooid.';
 $_lang['connection_default_admin_password'] = 'Admin wachtwoord:';
 $_lang['connection_default_admin_password_confirm'] = 'Bevestig wachtwoord:';
-$_lang['connection_default_admin_user'] = 'Standarad Admin gebruiker';
+$_lang['connection_default_admin_user'] = 'Standaard Admin gebruiker';
 $_lang['connection_table_prefix'] = 'Tabel voorvoegsel:';
 $_lang['connection_test_connection'] = 'Test verbinding';
 $_lang['connection_title'] = 'Verbinding Informatie';
@@ -56,7 +57,7 @@ $_lang['context_override'] = 'Laat deze uitgeschakeld om het systeem toe te staa
 $_lang['context_web_options'] = '<strong>Web Context Opties</strong> (front-end web site)';
 $_lang['context_web_path'] = 'Bestandssysteem pad voor web context';
 $_lang['context_web_url'] = 'URL voor web context';
-$_lang['continue'] = 'Continu';
+$_lang['continue'] = 'Volgende';
 $_lang['dau_err_save'] = 'Fout tijdens het opslan van de admin gebruiker.';
 $_lang['dau_saved'] = 'Standaard admin gebruiker gemaakt.';
 $_lang['db_check_db'] = 'Controleer database:';
@@ -73,14 +74,13 @@ $_lang['db_err_show_collations'] = 'MODX kan de beschikbare collaties van de mys
 $_lang['db_success'] = 'Succes!';
 $_lang['db_test_coll_msg'] = 'Maak of test selectie van jouw database.';
 $_lang['db_test_conn_msg'] = 'Test de database server verbinding en toon de collaties.';
-$_lang['default_admin_user'] = 'Standaard Admin Gebruiker';
+$_lang['default_admin_user'] = 'Standaard Admin gebruiker';
 $_lang['delete_setup_dir'] = 'Vink deze aan om de setup map van het bestandssysteem te verwijderen.';
 $_lang['dir'] = 'ltr';
 $_lang['email_err_ns'] = 'E-mailadres is ongeldig';
 $_lang['err_occ'] = 'Fouten zijn opgetreden!';
 $_lang['err_update_table'] = 'Fout bij het updaten van class [[+class]]';
-$_lang['errors_occurred'] = '
-Er zijn fouten opgetreden tijdens de core installatie. Bekijk de installatie resultaten hieronder, los de problemen op en vervolg as aangegeven.';
+$_lang['errors_occurred'] = 'Er zijn fouten opgetreden tijdens de core installatie. Bekijk de installatie resultaten hieronder, los de problemen op en vervolg as aangegeven.';
 $_lang['failed'] = 'Mislukt!';
 $_lang['fatal_error'] = 'FATALE FOUT: MODX Installatie kan niet doorgaan.';
 $_lang['home'] = 'Home';
@@ -94,6 +94,7 @@ $_lang['install_packages_options'] = 'Pakket Installatie Opties';
 $_lang['install_success'] = 'Core installatie is succesvol. Klik op volgende om het installatieproces af te ronden.';
 $_lang['install_summary'] = 'Installatie overzicht';
 $_lang['install_update'] = 'Installeer/Update';
+$_lang['installation_finished'] = 'Installatie voltooid in [[+time]]';
 $_lang['license'] = '<p class="title">Je moet akkoord gaan met de licentie voordat u verder gaat met de installatie.</p>
 	<p>Usage of this software is subject to the GPL license. To help you understand
     what the GPL licence is and how it affects your ability to use the software, we
@@ -140,14 +141,14 @@ $_lang['license'] = '<p class="title">Je moet akkoord gaan met de licentie voord
 	file distributed with this package.</p>
 ';
 $_lang['license_agree'] = 'Ik ga akkoord met de voorwaarden vermeld in de licentie.';
-$_lang['license_agreement'] = 'Licentieovereenkomst';
+$_lang['license_agreement'] = 'Licentie Overeenkomst';
 $_lang['license_agreement_error'] = 'Je moet akkoord gaan met de licentie voordat je verder kunt met de installatie.';
-$_lang['login'] = 'Inloggen';
+$_lang['login'] = 'Aanmelden';
 $_lang['modx_class_err_nf'] = 'Kan het MODX class bestand niet inladen.';
 $_lang['modx_configuration_file'] = 'MODX configuratiebestand';
 $_lang['modx_err_instantiate'] = 'Kan geen instantie van de MODX class maken.';
 $_lang['modx_err_instantiate_mgr'] = 'Kan de MODX manager context niet initialiseren.';
-$_lang['modx_footer1'] = '&copy; 2005-2010 the <a href="http://www.modxcms.com/" onclick="window.open(this.href); return false;" onkeypress="window.open(this.href); return false;"  style="color: green; text-decoration:underline">MODX</a> Content Management Framework (CMF) project. All rights reserved. MODX is licensed under the GNU GPL.';
+$_lang['modx_footer1'] = '&copy; 2005-2015 Het <a href="http://www.modx.com/" onclick="window.open(this.href); return false;" onkeypress="window.open(this.href); return false;"  style="color: green; text-decoration:underline">MODX</a> Content Management Framework (CMF) project. Alle rechten zijn voorbehouden. MODX is gelicentieerd onder de GNU GPL.';
 $_lang['modx_footer2'] = 'MODX is gratis software. Wij moedigen je aan om creatief te zijn en gebruik te maken van MODX op de manier die past bij jou. Maar wees je er van bewust dat als je aanpassingen maakt en besluit deze te verspreiden, dat de broncode gratis blijft!';
 $_lang['modx_install'] = 'MODX Installatie';
 $_lang['modx_install_complete'] = 'MODX Installatie Afgerond';
@@ -156,18 +157,20 @@ $_lang['next'] = 'Volgende';
 $_lang['none'] = 'Geen';
 $_lang['ok'] = 'OKE!';
 $_lang['options_core_inplace'] = 'Bestanden zijn al neergezet<br /><small>(Aan te raden voor installaties op gedeelde servers.)</small>';
-$_lang['options_core_inplace_note'] = 'Controleer dit als je MODX van SVN ge�xporteerd hebt of uitgepakt hebt uit een volledig MODX pakket voorafgaand aan de installatie.';
+$_lang['options_core_inplace_note'] = 'Controleer dit als je MODX van SVN geëxporteerd hebt of uitgepakt hebt uit een volledig MODX pakket voorafgaand aan de installatie.';
 $_lang['options_core_unpacked'] = 'Core pakketten zijn handmatig uitgepakt<br /><small>(Aan te raden voor installaties op gedeelde servers.)</small>';
 $_lang['options_core_unpacked_note'] = 'Controleer dit als je handmatig het core pakket uitgepakt hebt van het bestand core/packagers/core.transport.zip. Dit vermindert de tijd die het duurt voor het installatieproces op systemen die het niet toestaan PHP en Apache time_limit scriptuitvoering tijdsinstellingen gewijzigd worden.';
 $_lang['options_install_new_copy'] = 'Installeer een nieuwe versie van ';
 $_lang['options_install_new_note'] = 'Noteer dat deze keuze elke data in de database mag overschrijven.';
-$_lang['options_important_upgrade'] = 'Belangrijke upgrate melding';
+$_lang['options_important_upgrade'] = 'Belangrijke upgrade melding';
 $_lang['options_important_upgrade_note'] = 'Zorg ervoor dat alle Manager gebruikers <strong>uitloggen voordat je upgrade</strong> om problemen te voorkomen (zoals, het niet kunnen openen van een resource). Wanneer je hinder ondervindt na de upgrade, loguit in elke Manager sessie, leeg je browser cache en log dan weer in.';
 $_lang['options_new_file_permissions'] = 'Nieuwe bestandsrechten';
 $_lang['options_new_file_permissions_note'] = 'Je kunt de rechten voor nieuwe bestanden aangemaakt door MODX overschrijven, bijvoorbeeld 0664 of 0666.';
 $_lang['options_new_folder_permissions'] = 'Nieuwe maprechten';
 $_lang['options_new_folder_permissions_note'] = 'Je kunt de rechten voor nieuwe mappen aangemaakt door MODX overschrijven, bijvoorbeeld 0775 of 0777.';
 $_lang['options_new_installation'] = 'Nieuwe installatie';
+$_lang['options_nocompress'] = 'Geen CSS/JS compresssie';
+$_lang['options_nocompress_note'] = 'Selecteer deze optie wanneer de manager niet werkt met CSS/JS compressie aan.';
 $_lang['options_title'] = 'Installatie opties';
 $_lang['options_upgrade_advanced'] = 'Geavanceerde upgrade opties<br /><small>(wijzig database configuratie)</small>';
 $_lang['options_upgrade_advanced_note'] = 'Voor geavanceerde database beheerders of verplaatsen naar servers met een ander database verbinding karakterset. <strong>Je dient jouw volledige database naam, gebruiker, wachtwoord en verbinding/collatie details te weten.</strong>';
@@ -177,14 +180,14 @@ $_lang['package_execute_err_retrieve'] = 'De installatie faalt omdat MODX [[+pat
 $_lang['package_err_install'] = 'Kan pakket [[+package]] niet installeren.';
 $_lang['package_err_nf'] = 'Kan de installatie voor pakket [[+package]] niet vinden.';
 $_lang['package_installed'] = 'Pakket [[+package]] succesvol ge�nstalleerd.';
-$_lang['password_err_invchars'] = 'Jouw wachtwoord mag geen ongeldige karakters bevatten, zoals /, \\, &apos;, &quot;, (, ) or {}.';
+$_lang['password_err_invchars'] = 'Jouw wachtwoord mag geen ongeldige karakters bevatten, zoals /, \\, \', ", (, ) or {}.';
 $_lang['password_err_nomatch'] = 'Komt niet overeen met wachtwoord';
 $_lang['password_err_ns'] = 'Wachtwoord is leeg';
 $_lang['password_err_short'] = 'Jouw wachtwoord moet minimaal 6 tekens lang zijn.';
 $_lang['please_select_login'] = 'Kies voor de "Inlog" knop voor toegang tot de management interface.';
 $_lang['preinstall_failure'] = 'Er zijn problemen opgetreden. Bekijk de testresultaten hieronder. Corrigeer de problemen zoals hieronder beschreven en probeer het nog eens.';
 $_lang['preinstall_success'] = 'De testresultaten zijn succesvol. Klik op instaleren hieronder om door te gaan.';
-$_lang['refresh'] = 'Vernieuwen';
+$_lang['refresh'] = 'Verversen';
 $_lang['request_handler_err_nf'] = 'Kan de request handler in [[+path]] niet vinden. Controleer of je alle bestanden hebt geupload.';
 $_lang['restarted_msg'] = 'MODX moest de installatie uit voorzorg opnieuw uitvoeren omdat de installatie voor meer dan 15 minuten inactief was. Gelieve de installatie opnieuw uit te voeren op dit moment.';
 $_lang['retry'] = 'Opnieuw';

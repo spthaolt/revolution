@@ -5,6 +5,7 @@
 /**
  * The core MODX user class.
  *
+ * @property int $id The ID of the User
  * @property string $username The username for this User
  * @property string $password The encrypted password for this User
  * @property string $cachepwd A cached, encrypted password used when resetting the User's password or for confirmation
@@ -33,6 +34,8 @@
  * @package modx
  */
 class modUser extends modPrincipal {
+    /** @var modX|xPDO $xpdo */
+    public $xpdo;
     /**
      * A collection of contexts which the current principal is authenticated in.
      * @var array
@@ -41,11 +44,14 @@ class modUser extends modPrincipal {
     public $sessionContexts= array ();
 
     /**
-     * The modUser password field is hashed automatically.
+     * The modUser password field is hashed automatically, and prevent sudo from being set via mass-assignment
      *
      * {@inheritdoc}
      */
     public function set($k, $v= null, $vType= '') {
+        if (!$this->getOption(xPDO::OPT_SETUP)) {
+            if ($k == 'sudo') return false;
+        }
         if (in_array($k, array('password', 'cachepwd')) && $this->xpdo->getService('hashing', 'hashing.modHashing')) {
             if (!$this->get('salt')) {
                 $this->set('salt', md5(uniqid(rand(),true)));
@@ -57,8 +63,20 @@ class modUser extends modPrincipal {
     }
 
     /**
+     * Set the sudo field explicitly
+     *
+     * @param boolean $sudo
+     * @return bool
+     */
+    public function setSudo($sudo) {
+        $this->_fields['sudo'] = (boolean)$sudo;
+        $this->setDirty('sudo');
+        return true;
+    }
+
+    /**
      * Overrides xPDOObject::save to fire modX-specific events
-     * 
+     *
      * {@inheritDoc}
      */
     public function save($cacheFlag = false) {
@@ -73,7 +91,7 @@ class modUser extends modPrincipal {
         }
 
         $saved = parent :: save($cacheFlag);
-        
+
         if ($saved && $this->xpdo instanceof modX) {
             $this->xpdo->invokeEvent('OnUserSave',array(
                 'mode' => $isNew ? modSystemEvent::MODE_NEW : modSystemEvent::MODE_UPD,
@@ -263,12 +281,14 @@ class modUser extends modPrincipal {
      * @access public
      * @param string $newPassword Password to set.
      * @param string $oldPassword Current password for validation.
+     * @param boolean $validateOldPassword Current password validation required flag.
      * @return boolean Indicates if password was successfully changed.
      * @todo Add support for configurable password encoding.
      */
-    public function changePassword($newPassword, $oldPassword) {
+    public function changePassword($newPassword, $oldPassword, $validateOldPassword = true) {
         $changed= false;
-        if ($this->passwordMatches($oldPassword)) {
+        $changePassword = $validateOldPassword ? $this->passwordMatches($oldPassword) : true;
+        if ($changePassword) {
             if (!empty ($newPassword)) {
                 $this->set('password', $newPassword);
                 $changed= $this->save();
@@ -465,7 +485,7 @@ class modUser extends modPrincipal {
      * @return array A key -> value array of settings.
      */
     public function getSettings() {
-        $settings = array();
+        $settings = $this->getUserGroupSettings();
         $uss = $this->getMany('UserSettings');
         /** @var modUserSetting $us */
         foreach ($uss as $us) {
@@ -476,17 +496,43 @@ class modUser extends modPrincipal {
     }
 
     /**
+     * Get all group settings for the user in array format.
+     *
+     * Preference is set by group rank + member rank, with primary_group having
+     * highest priority.
+     *
+     * @return array An associative array of group settings.
+     */
+    public function getUserGroupSettings() {
+        $settings = array();
+        $primary = array();
+        $query = $this->xpdo->newQuery('modUserGroupSetting');
+        $query->innerJoin('modUserGroup', 'UserGroup', array('UserGroup.id = modUserGroupSetting.group'));
+        $query->innerJoin('modUserGroupMember', 'Member', array('Member.member' => $this->get('id'), 'UserGroup.id = Member.user_group'));
+        $query->sortby('UserGroup.rank', 'DESC');
+        $query->sortby('Member.rank', 'DESC');
+        $ugss = $this->xpdo->getCollection('modUserGroupSetting', $query);
+        /** @var modUserGroupSetting $ugs */
+        foreach ($ugss as $ugs) {
+            if ($ugs->get('group') === $this->get('primary_group')) {
+                $primary[$ugs->get('key')] = $ugs->get('value');
+            } else {
+                $settings[$ugs->get('key')] = $ugs->get('value');
+            }
+        }
+        return array_merge($settings, $primary);
+    }
+
+    /**
      * Gets all Resource Groups this user is assigned to. This may not work in
      * the new model.
      *
-     * @deprecated
-     * @todo refactor this to actually work.
      * @access public
      * @param string $ctx The context in which to peruse for Resource Groups
      * @return array An array of Resource Group names.
      */
     public function getResourceGroups($ctx = '') {
-        if (empty($ctx)) $ctx = $this->xpdo->context->get('key');
+        if (empty($ctx) && is_object($this->xpdo->context)) $ctx = $this->xpdo->context->get('key');
         $resourceGroups= array ();
         $id = $this->get('id') ? (string) $this->get('id') : '0';
         if (isset($_SESSION["modx.user.{$id}.resourceGroups"][$ctx])) {
@@ -520,6 +566,28 @@ class modUser extends modPrincipal {
             $_SESSION["modx.user.{$id}.userGroups"]= $groups;
         }
         return $groups;
+    }
+
+    /**
+     * Return the Primary Group of this User
+     *
+     * @return modUserGroup|null
+     */
+    public function getPrimaryGroup() {
+        if (!$this->isAuthenticated($this->xpdo->context->get('key'))) {
+            return null;
+        }
+        $userGroup = $this->getOne('PrimaryGroup');
+        if (!$userGroup) {
+            $c = $this->xpdo->newQuery('modUserGroup');
+            $c->innerJoin('modUserGroupMember','UserGroupMembers');
+            $c->where(array(
+                'UserGroupMembers.member' => $this->get('id'),
+            ));
+            $c->sortby('UserGroupMembers.rank','ASC');
+            $userGroup = $this->xpdo->getObject('modUserGroup',$c);
+        }
+        return $userGroup;
     }
 
     /**
@@ -582,10 +650,11 @@ class modUser extends modPrincipal {
      * @access public
      * @param mixed $groupId Either the name or ID of the User Group to join.
      * @param mixed $roleId Optional. Either the name or ID of the Role to
+     * @param integer $rank Optional.
      * assign to for the group.
      * @return boolean True if successful.
      */
-    public function joinGroup($groupId,$roleId = null) {
+    public function joinGroup($groupId,$roleId = null,$rank = null) {
         $joined = false;
 
         $groupPk = is_string($groupId) ? array('name' => $groupId) : $groupId;
@@ -612,15 +681,22 @@ class modUser extends modPrincipal {
             'user_group' => $userGroup->get('id'),
         ));
         if (empty($member)) {
+            if ($rank == null) {
+                $rank = count($this->getMany('UserGroupMembers'));
+            }
             $member = $this->xpdo->newObject('modUserGroupMember');
             $member->set('member',$this->get('id'));
             $member->set('user_group',$userGroup->get('id'));
+            $member->set('rank', $rank);
             if (!empty($role)) {
                 $member->set('role',$role->get('id'));
             }
             $joined = $member->save();
             if (!$joined) {
                 $this->xpdo->log(xPDO::LOG_LEVEL_ERROR,'An unknown error occurred preventing adding the User to the User Group.');
+            } else {
+                 unset($_SESSION["modx.user.{$this->get('id')}.userGroupNames"],
+                     $_SESSION["modx.user.{$this->get('id')}.userGroups"]);
             }
         } else {
             $joined = true;
@@ -654,6 +730,11 @@ class modUser extends modPrincipal {
             $this->xpdo->log(xPDO::LOG_LEVEL_ERROR,'User could not leave group with key "'.$groupId.'" because the User was not a part of that group.');
         } else {
             $left = $member->remove();
+            if (!$left) {
+                $this->xpdo->log(xPDO::LOG_LEVEL_ERROR,'An unknown error occurred preventing removing the User from the User Group.');
+            } else {
+                unset($_SESSION["modx.user.{$this->get('id')}.userGroupNames"]);
+            }
         }
         return $left;
     }
@@ -723,7 +804,7 @@ class modUser extends modPrincipal {
 
         $this->xpdo->getService('mail', 'mail.modPHPMailer');
         if (!$this->xpdo->mail) return false;
-        
+
         $this->xpdo->mail->set(modMail::MAIL_BODY, $message);
         $this->xpdo->mail->set(modMail::MAIL_FROM, $this->xpdo->getOption('from',$options,$this->xpdo->getOption('emailsender')));
         $this->xpdo->mail->set(modMail::MAIL_FROM_NAME, $this->xpdo->getOption('fromName',$options,$this->xpdo->getOption('site_name')));
@@ -732,10 +813,93 @@ class modUser extends modPrincipal {
         $this->xpdo->mail->address('to',$profile->get('email'),$profile->get('fullname'));
         $this->xpdo->mail->address('reply-to',$this->xpdo->getOption('sender',$options,$this->xpdo->getOption('emailsender')));
         $this->xpdo->mail->setHTML($this->xpdo->getOption('html',$options,true));
-        if ($this->xpdo->mail->send() == false) {
-            return false;
-        }
+        $sent = $this->xpdo->mail->send();
         $this->xpdo->mail->reset();
-        return true;
+        return $sent;
+    }
+
+    /**
+     * Get the dashboard for this user
+     *
+     * @return modDashboard
+     */
+    public function getDashboard() {
+        $this->xpdo->loadClass('modDashboard');
+
+        /** @var modUserGroup $userGroup */
+        $userGroup = $this->getPrimaryGroup();
+        if ($userGroup) {
+            /** @var modDashboard $dashboard */
+            $dashboard = $userGroup->getOne('Dashboard');
+            if (empty($dashboard)) {
+                $dashboard = modDashboard::getDefaultDashboard($this->xpdo);
+            }
+        } else {
+            $dashboard = modDashboard::getDefaultDashboard($this->xpdo);
+        }
+        return $dashboard;
+    }
+
+    /**
+     * Wrapper method to retrieve this user image
+     *
+     * @param int    $width The desired photo width
+     * @param int    $height The desired photo height (if applicable)
+     * @param string $default An optional default photo URL
+     *
+     * @return string The photo URL
+     */
+    public function getPhoto($width = 128, $height = 128, $default = '') {
+        $img = $default;
+
+        if ($this->Profile->photo) {
+            $img = $this->getProfilePhoto($width, $height);
+        } elseif ($this->xpdo->getOption('enable_gravatar')) {
+            $img = $this->getGravatar($width);
+        }
+
+        return $img;
+    }
+
+    /**
+     * Retrieve the profile photo, if any
+     *
+     * @param int $width The desired photo width
+     * @param int $height The desired photo height
+     *
+     * @return string The photo URL
+     */
+    public function getProfilePhoto($width = 128, $height = 128) {
+        if (empty($this->Profile->photo)) {
+            return '';
+        }
+        $this->xpdo->loadClass('sources.modMediaSource');
+        /** @var modMediaSource $source */
+        $source = modMediaSource::getDefaultSource($this->xpdo, $this->xpdo->getOption('photo_profile_source'));
+        $source->initialize();
+
+        $path = $source->getBasePath($this->Profile->photo) . $this->Profile->photo;
+
+        return $this->xpdo->getOption('connectors_url', MODX_CONNECTORS_URL)
+            . "system/phpthumb.php?zc=1&h={$height}&w={$width}&src={$path}";
+    }
+
+    /**
+     * Compute the Gravatar photo URL
+     *
+     * @param int    $size The desired image size
+     * @param string $default The default Gravatar photo
+     *
+     * @return string The Gravatar photo URL
+     */
+    public function getGravatar($size = 128, $default = 'mm') {
+        $gravemail = md5(
+            strtolower(
+                trim($this->Profile->email)
+            )
+        );
+
+        return $this->xpdo->getOption('url_scheme', null, 'http://') . 'www.gravatar.com/avatar/'
+            . $gravemail . "?s={$size}&d={$default}";
     }
 }

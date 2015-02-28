@@ -18,12 +18,25 @@ require_once (dirname(dirname(__FILE__)).'/create.class.php');
  */
 class modTemplateCreateProcessor extends modElementCreateProcessor {
     public $classKey = 'modTemplate';
-    public $languageTopics = array('template','category');
+    public $languageTopics = array('template','category','element');
     public $permission = 'new_template';
-    public $elementType = 'template';
     public $objectType = 'template';
     public $beforeSaveEvent = 'OnBeforeTempFormSave';
     public $afterSaveEvent = 'OnTempFormSave';
+
+    public function beforeSave() {
+        $isStatic = intval($this->getProperty('static', 0));
+
+        if ($isStatic == 1) {
+            $staticFile = $this->getProperty('static_file');
+
+            if (empty($staticFile)) {
+                $this->addFieldError('static_file', $this->modx->lexicon('static_file_ns'));
+            }
+        }
+
+        return parent::beforeSave();
+    }
 
     public function afterSave() {
         $this->saveTemplateVariables();

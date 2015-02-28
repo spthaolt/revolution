@@ -17,7 +17,7 @@ class modActionCreateProcessor extends modObjectCreateProcessor {
     public $classKey = 'modAction';
     public $languageTopics = array('action','menu','namespace');
     public $permission = 'actions';
-    public $elementType = 'action';
+    public $objectType = 'action';
 
     public function initialize() {
         $this->setDefaultProperties(array(
@@ -63,7 +63,27 @@ class modActionCreateProcessor extends modObjectCreateProcessor {
             $this->addFieldError('namespace',$this->modx->lexicon('namespace_err_nf'));
         }
 
+        /* set lang_topcis to namespace:default if it is empty */
+        $lang_topics = $this->getProperty('lang_topics');
+        if(empty($lang_topics)){
+            $this->object->set('lang_topics', $namespace->name . ':default');
+        }
+
         return !$this->hasErrors();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @return mixed
+     */
+    public function cleanup() {
+        $this->modx->cacheManager->refresh(
+            array(
+                $this->modx->getOption('cache_action_map_key', null, 'action_map'),
+                $this->modx->getOption('cache_menu_key', null, 'menu'),
+            )
+        );
+        return parent::cleanup();
     }
 }
 return 'modActionCreateProcessor';

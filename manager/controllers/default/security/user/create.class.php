@@ -21,12 +21,14 @@ class SecurityUserCreateManagerController extends modManagerController {
      */
     public function loadCustomCssJs() {
         $mgrUrl = $this->modx->getOption('manager_url',null,MODX_MANAGER_URL);
-        $this->addJavascript($mgrUrl.'assets/modext/util/datetime.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/core/modx.orm.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.group.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.panel.user.js');
         $this->addHtml('<script type="text/javascript">
         // <![CDATA[
+        Ext.onReady(function() {
+            MODx.load({ xtype: "modx-page-user-create" });
+        });
         MODx.onUserFormRender = "'.$this->onUserFormRender.'";
         // ]]>
         </script>');
@@ -86,5 +88,13 @@ class SecurityUserCreateManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('user','setting','access');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Users';
     }
 }

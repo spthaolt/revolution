@@ -1,25 +1,23 @@
 <?php
 /**
- * User Dutch lexicon topic
+ * User English lexicon topic
  *
- * @language nl
+ * @language en
  * @package modx
  * @subpackage lexicon
- *
- * @author Bert Oost, <bertoost85@gmail.com>
  */
 $_lang['active'] = 'Actief';
 $_lang['address'] = 'Adres';
 $_lang['administrator'] = 'Beheerder';
-$_lang['authority'] = 'authoriteit';
+$_lang['authority'] = 'Autoriteit';
 $_lang['change_password'] = 'Wachtwoord wijzigen';
 $_lang['change_password_confirm'] = 'Bevestig wachtwoord';
 $_lang['change_password_new'] = 'Nieuw wachtwoord';
 $_lang['city'] = 'Plaats';
 $_lang['extended_fields'] = 'Extra velden';
-$_lang['extended_fields_msg'] = 'Wijzig elk extra veld die ge�mplementeerd zijn hier.';
+$_lang['extended_fields_msg'] = 'Wijzig elk extra veld die geïmplementeerd zijn hier.';
 $_lang['login_options'] = 'Inlog opties';
-$_lang['minimum_role'] = 'Minimale rol';
+$_lang['minimum_role'] = 'Minimale Rol';
 $_lang['password'] = 'Wachtwoord';
 $_lang['password_confirm'] = 'Bevestig wachtwoord';
 $_lang['password_gen_gen'] = 'Laat MODX een wachtwoord genereren.';
@@ -76,11 +74,12 @@ $_lang['user_confirm_remove'] = 'Weet je zeker dat je deze gebruiker definitief 
 $_lang['user_country'] = 'Land';
 $_lang['user_dob'] = 'Geboortedatum';
 $_lang['user_doesnt_exist'] = 'Gebruiker bestaat niet';
+$_lang['user_duplicate'] = 'Gebruiker dupliceren';
 $_lang['user_edit_self_msg'] = 'Wellicht moet je opnieuw inloggen nadat je de gegevens volledig aangepast hebt.</strong><br>Daarnaast moet je er voor kiezen om een nieuw wachtwoord te genereren voor jezelf, deze wordt je per e-mail toegestuurd.';
 $_lang['user_email'] = 'E-mailadres';
 $_lang['user_err_access_permissions_save'] = 'Er is een fout opgetreden tijdens het opslaan van de rechten voor de gebruiker.';
 $_lang['user_err_ae_group'] = 'Gebruiker bevindt zich reeds in deze groep!';
-$_lang['user_err_already_exists'] = 'Gebruikersnaam bestaat reeds!';
+$_lang['user_err_already_exists'] = 'Gebruikersnaam is reeds in gebruik!';
 $_lang['user_err_already_exists_email'] = 'E-mailadres bestaat reeds!';
 $_lang['user_err_cannot_delete_last_admin'] = 'Je kunt de laatste gebruiker uit de Adminstrator groep niet verwijderen, omdat jouw site anders geen beheerders heeft.';
 $_lang['user_err_cannot_delete_self'] = 'Je kunt jezelf niet verwijderen!';
@@ -118,7 +117,7 @@ $_lang['user_fax'] = 'Fax';
 $_lang['user_female'] = 'Vrouw';
 $_lang['user_full_name'] = 'Volledige naam';
 $_lang['user_group'] = 'Gebruikersgroep';
-$_lang['user_group_create'] = 'Maak gebruikersgroep';
+$_lang['user_group_create'] = 'Maak Gebruikers Groep';
 $_lang['user_group_id'] = 'Groep ID';
 $_lang['user_group_desc_name'] = 'De Naam van de Gebruikersgroep';
 $_lang['user_group_desc_description'] = 'Een korte Omschrijving van de Gebruikersgroep.';
@@ -148,11 +147,13 @@ $_lang['user_group_new'] = 'Nieuwe gebruikersgoep';
 $_lang['user_group_parent'] = 'Bovenliggende groep';
 $_lang['user_group_remove'] = 'Verwijder gebruikersgroep';
 $_lang['user_group_remove_confirm'] = 'Weet je zeker dat je deze gebruikersgroep wilt verwijderen?';
+$_lang['user_group_settings'] = 'User Group Instellingen';
+$_lang['user_group_settings_desc'] = 'Beheer Instellingen voor de Gebruikersgroep';
 $_lang['user_group_untitled'] = 'Naamloze gebruikersgoep';
 $_lang['user_group_update'] = 'Gebruikersgroep aanpassen';
+$_lang['user_group_user_add'] = 'Gebruiker toevoegen aan groep';
 $_lang['user_group_user_add_user_desc'] = 'De gebruikersnaam van de Gebruiker om aan de Gebruikersgroep toe te voegen.';
 $_lang['user_group_user_add_role_desc'] = 'De Rol dat de Gebruiker moet krijgen in deze Groep. Dit heeft effect op de Toegang die de gebruiker heeft.';
-$_lang['user_group_user_add'] = 'Gebruiker toevoegen aan groep';
 $_lang['user_group_user_remove'] = 'Verwijder gebruikersgroep';
 $_lang['user_group_user_remove_confirm'] = 'Weet je zeker dat je de gebruiker van de gebruikersgroep wilt verwijderen`?';
 $_lang['user_group_user_update_role'] = 'Wijzig de rol van een gebruiker in gebruikersgroep';
@@ -186,7 +187,10 @@ $_lang['user_setting_err_save'] = 'Er is een fout opgetreden tijdens het opslaan
 $_lang['user_settings'] = 'Gebruikersinstellingen';
 $_lang['user_settings_desc'] = 'Hier kun je specifieke instellingen voor deze gebruiker wijzigen.';
 $_lang['user_state'] = 'Staat';
+$_lang['user_sudo'] = 'Sudo Gebruiker';
+$_lang['user_sudo_desc'] = 'Indien aangevinkt, zal deze gebruiker volledig toegang hebben tot de site en Toegangsrechten worden genegeerd. *NIET AANVINKEN* tenzij je weet wat je doet!';
 $_lang['user_title'] = 'Maak/wijzig gebruiker';
+$_lang['user_other'] = 'Overige';
 $_lang['user_update'] = 'Gebruiker aanpassen';
 $_lang['user_updated_password_message'] = 'De gebruiker is aangepast. Dit is het nieuwe wachtwoord: [[+password]]';
 $_lang['user_upload_message'] = ' Indien je wenst dat deze gebruiker geen bestandstypen kan uploaden in deze categorie, controleer dan dat de \'Use Main Configuration Setting\' checkbox niet is aangevinkt en laat het veld leeg.';

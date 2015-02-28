@@ -23,6 +23,10 @@ class SystemImportManagerController extends modManagerController {
         $this->addJavascript($mgrUrl.'assets/modext/widgets/resource/modx.tree.resource.simple.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/system/modx.panel.import.resources.js');
         $this->addJavascript($mgrUrl.'assets/modext/sections/system/import/resource.js');
+        $this->addHtml("<script>
+            Ext.onReady(function() {
+                MODx.add('modx-page-import-resource');
+            });</script>");
     }
 
     /**
@@ -46,7 +50,7 @@ class SystemImportManagerController extends modManagerController {
      * @return string
      */
     public function getTemplateFile() {
-        return 'system/import/index.tpl';
+        return '';
     }
 
     /**

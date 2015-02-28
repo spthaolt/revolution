@@ -17,11 +17,24 @@ require_once (dirname(dirname(__FILE__)).'/create.class.php');
  */
 class modSnippetCreateProcessor extends modElementCreateProcessor {
     public $classKey = 'modSnippet';
-    public $languageTopics = array('snippet','category');
+    public $languageTopics = array('snippet','category','element');
     public $permission = 'new_snippet';
-    public $elementType = 'snippet';
     public $objectType = 'snippet';
     public $beforeSaveEvent = 'OnBeforeSnipFormSave';
     public $afterSaveEvent = 'OnSnipFormSave';
+
+    public function beforeSave() {
+        $isStatic = intval($this->getProperty('static', 0));
+
+        if ($isStatic == 1) {
+            $staticFile = $this->getProperty('static_file');
+
+            if (empty($staticFile)) {
+                $this->addFieldError('static_file', $this->modx->lexicon('static_file_ns'));
+            }
+        }
+
+        return parent::beforeSave();
+    }
 }
 return 'modSnippetCreateProcessor';

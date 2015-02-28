@@ -21,7 +21,7 @@ class ContextUpdateManagerController extends modManagerController {
      * @var modContext $context
      */
     public $context;
-    
+
     /**
      * Check for any permissions or requirements to load page
      * @return bool
@@ -35,7 +35,7 @@ class ContextUpdateManagerController extends modManagerController {
      * @return void
      */
     public function initialize() {
-        $this->context= $this->modx->getObjectGraph('modContext', '{"ContextSettings":{}}', $this->scriptProperties['key']);
+        $this->context= $this->modx->getObjectGraph('modContext', '{"ContextSettings":{}}', array('key' => $this->scriptProperties['key']));
         if ($this->context) {
             $this->contextKey = $this->context->get('key');
         }
@@ -47,12 +47,15 @@ class ContextUpdateManagerController extends modManagerController {
      */
     public function loadCustomCssJs() {
         $mgrUrl = $this->modx->getOption('manager_url',null,MODX_MANAGER_URL);
-        $this->addHtml('<script type="text/javascript">
-        // <![CDATA[
-        MODx.onContextFormRender = "'.$this->onContextFormRender.'";
-        MODx.ctx = "'.$this->contextKey.'";
-        // ]]>
-        </script>');
+        $this->addHtml("<script>
+            // <![CDATA[
+            MODx.onContextFormRender = '".$this->onContextFormRender."';
+            MODx.ctx = '".$this->contextKey."';
+            Ext.onReady(function() {
+                MODx.add('modx-page-context-update');
+            });
+            // ]]>
+            </script>");
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.access.context.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/core/modx.grid.settings.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/system/modx.grid.context.settings.js');
@@ -131,7 +134,7 @@ class ContextUpdateManagerController extends modManagerController {
      * @return string
      */
     public function getTemplateFile() {
-        return 'context/update.tpl';
+        return '';
     }
 
     /**
@@ -140,5 +143,13 @@ class ContextUpdateManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('context','setting','access','policy','user');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Contexts';
     }
 }

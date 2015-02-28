@@ -1,7 +1,7 @@
 <?php
 /**
  * Base controller class for Resources
- * 
+ *
  * @package modx
  * @subpackage manager.controllers
  */
@@ -14,7 +14,7 @@ abstract class ResourceManagerController extends modManagerController {
     /** @var modResource $resource */
     public $resource;
     /** @var modResource $resource */
-    public $parent;
+    public $parent = null;
     /** @var string $resourceClass */
     public $resourceClass = 'modDocument';
     /** @var array $tvCounts */
@@ -31,10 +31,11 @@ abstract class ResourceManagerController extends modManagerController {
     public $canDelete = true;
     public $canEdit = true;
     public $canCreate = true;
+    public $canCreateRoot = true;
 
     /**
      * Return the appropriate Resource controller class based on the class_key request parameter
-     * 
+     *
      * @static
      * @param modX $modx A reference to the modX instance
      * @param string $className The controller class name that is attempting to be loaded
@@ -48,13 +49,13 @@ abstract class ResourceManagerController extends modManagerController {
             $isDerivative = true;
             $resourceClass = in_array($_REQUEST['class_key'],array('modDocument','modResource')) ? 'modDocument' : $_REQUEST['class_key'];
             if ($resourceClass == 'modResource') $resourceClass = 'modDocument';
-        } else if (!empty($_REQUEST['id'])) {
+        } else if (!empty($_REQUEST['id']) && $_REQUEST['id'] != 'undefined' && strlen($_REQUEST['id']) === strlen((integer)$_REQUEST['id'])) {
             /** @var modResource $resource */
-            $resource = $modx->getObject('modResource',$_REQUEST['id']);
+            $resource = $modx->getObject('modResource', array('id' => $_REQUEST['id']));
             if ($resource && !in_array($resource->get('class_key'),array('modDocument','modResource'))) {
                 $isDerivative = true;
                 $resourceClass = $resource->get('class_key');
-            } else if ($resource->get('class_key') == 'modResource') { /* fix improper class key */
+            } else if ($resource && $resource->get('class_key') == 'modResource') { /* fix improper class key */
                 $resource->set('class_key','modDocument');
                 $resource->save();
             }
@@ -62,15 +63,22 @@ abstract class ResourceManagerController extends modManagerController {
 
         if ($isDerivative) {
             $resourceClass = str_replace(array('../','..','/','\\'),'',$resourceClass);
+            if (!class_exists($resourceClass) && !$modx->loadClass($resourceClass)) {
+                $resourceClass = 'modDocument';
+            }
 
             $delegateView = $modx->call($resourceClass,'getControllerPath',array(&$modx));
             $action = strtolower(str_replace(array('Resource','ManagerController'),'',$className));
             $className = str_replace('mod','',$resourceClass).ucfirst($action).'ManagerController';
             $controllerFile = $delegateView.$action.'.class.php';
             if (!file_exists($controllerFile)) {
-                $modx->setOption('manager_theme','default');
-                $delegateView = $modx->call($resourceClass,'getControllerPath',array(&$modx));
+                // We more than likely are using a custom manager theme without overridden controller, let's try with the default theme
+                $theme = $modx->getOption('manager_theme', null, 'default');
+                $modx->setOption('manager_theme', 'default');
+                $delegateView = $modx->call($resourceClass, 'getControllerPath', array(&$modx));
                 $controllerFile = $delegateView.$action.'.class.php';
+                // Restore custom theme (so we don't process/use default theme assets)
+                $modx->setOption('manager_theme', $theme);
             }
             require_once $controllerFile;
         }
@@ -81,7 +89,7 @@ abstract class ResourceManagerController extends modManagerController {
 
     /**
      * Used to set values on the resource record sent to the template for derivative classes
-     * 
+     *
      * @return void
      */
     public function prepareResource() {}
@@ -105,10 +113,11 @@ abstract class ResourceManagerController extends modManagerController {
         $this->canEdit = $this->modx->hasPermission('edit_document');
         $this->canCreate = $this->modx->hasPermission('new_document');
         $this->canPublish = $this->modx->hasPermission('publish_document');
-        $this->canDelete = $this->modx->hasPermission('delete_document');
-        $this->canDuplicate = $this->resource->checkPolicy('save');
+        $this->canDelete = ($this->modx->hasPermission('delete_document') && $this->resource->checkPolicy(array('save' => true, 'delete' => true)));
+        $this->canDuplicate = ($this->modx->hasPermission('resource_duplicate') &&  $this->resource->checkPolicy('save'));
+        $this->canCreateRoot = $this->modx->hasPermission('new_document_in_root');
     }
-    
+
     /**
      * Get and set the parent for this resource
      * @return string The pagetitle of the parent
@@ -116,18 +125,18 @@ abstract class ResourceManagerController extends modManagerController {
     public function setParent() {
         /* handle default parent */
         $parentName = $this->context->getOption('site_name', '', $this->modx->_userConfig);
-        $parentId = !empty($scriptProperties['parent']) ? $scriptProperties['parent'] : $this->resource->get('parent');
+        $parentId = !empty($this->scriptProperties['parent']) ? $this->scriptProperties['parent'] : $this->resource->get('parent');
         if ($parentId == 0) {
             $parentName = $this->context->getOption('site_name', '', $this->modx->_userConfig);
         } else {
             $this->parent = $this->modx->getObject('modResource',$parentId);
-            if ($this->parent != null) {
+            if ($this->parent !== null) {
                 $parentName = $this->parent->get('pagetitle');
                 $this->resource->set('parent',$parentId);
             }
         }
 
-        if ($this->parent == null) {
+        if ($this->parent === null) {
             $this->parent = $this->modx->newObject($this->resourceClass);
             $this->parent->set('id',0);
             $this->parent->set('parent',0);
@@ -213,9 +222,17 @@ abstract class ResourceManagerController extends modManagerController {
      * @return modContext
      */
     public function setContext() {
-        $this->ctx = !empty($this->scriptProperties['context_key']) ? $this->scriptProperties['context_key'] : 'web';
-        $this->setPlaceholder('_ctx',$this->ctx);
+        if(!empty($this->scriptProperties['context_key'])) {
+            $this->ctx = $this->modx->stripTags($this->scriptProperties['context_key']);
+        } else {
+            $this->ctx = !empty($this->resource) ? $this->resource->get('context_key') : $this->modx->getOption('default_context');
+        }
+
         $this->context = $this->modx->getContext($this->ctx);
+        if (!$this->context) {
+            $this->ctx = '';
+        }
+        $this->setPlaceholder('_ctx',$this->ctx);
         return $this->context;
     }
 
@@ -233,26 +250,30 @@ abstract class ResourceManagerController extends modManagerController {
 
         /* get categories */
         $c = $this->modx->newQuery('modCategory');
+        $c->sortby('rank', 'ASC');
         $c->sortby('category','ASC');
-        $categories = $this->modx->getCollection('modCategory',$c);
-        $emptyCategory = $this->modx->newObject('modCategory');
-        $emptyCategory->set('category',ucfirst($this->modx->lexicon('uncategorized')));
-        $emptyCategory->id = 0;
-        $categories[0] = $emptyCategory;
+        $cats = $this->modx->getCollection('modCategory',$c);
+        $categories = array();
+        /** @var modCategory $cat */
+        foreach ($cats as $cat) {
+            $categories[$cat->get('id')] = $cat->toArray();
+            $categories[$cat->get('id')]['tvs'] = array();
+            $categories[$cat->get('id')]['tvCount'] = 0;
+        }
+
+        $categories[0] = array(
+            'id' => 0,
+            'category' => ucfirst($this->modx->lexicon('uncategorized')),
+            'tvs' => array(),
+            'tvCount' => 0,
+        );
         $tvMap = array();
         $hidden = array();
         $templateId = $this->resource->get('template');
         if ($templateId && ($template = $this->modx->getObject('modTemplate', $templateId))) {
-            $tvs = array();
             if ($template) {
                 $c = $this->modx->newQuery('modTemplateVar');
                 $c->query['distinct'] = 'DISTINCT';
-                $c->select($this->modx->getSelectColumns('modTemplateVar', 'modTemplateVar'));
-                $c->select($this->modx->getSelectColumns('modCategory', 'Category', 'cat_', array('category')));
-                if(empty($reloadData)) {
-                    $c->select($this->modx->getSelectColumns('modTemplateVarResource', 'TemplateVarResource', '', array('value')));
-                }
-                $c->select($this->modx->getSelectColumns('modTemplateVarTemplate', 'TemplateVarTemplate', '', array('rank')));
                 $c->leftJoin('modCategory','Category');
                 $c->innerJoin('modTemplateVarTemplate','TemplateVarTemplate',array(
                     'TemplateVarTemplate.tmplvarid = modTemplateVar.id',
@@ -262,15 +283,25 @@ abstract class ResourceManagerController extends modManagerController {
                     'TemplateVarResource.tmplvarid = modTemplateVar.id',
                     'TemplateVarResource.contentid' => $this->resource->get('id'),
                 ));
+                $c->select($this->modx->getSelectColumns('modTemplateVar', 'modTemplateVar'));
+                $c->select($this->modx->getSelectColumns('modCategory', 'Category', 'cat_', array('category')));
+                if(empty($reloadData)) {
+                    $c->select($this->modx->getSelectColumns('modTemplateVarResource', 'TemplateVarResource', '', array('value')));
+                }
+                $c->select($this->modx->getSelectColumns('modTemplateVarTemplate', 'TemplateVarTemplate', '', array('rank')));
                 $c->sortby('cat_category,TemplateVarTemplate.rank,modTemplateVar.rank','ASC');
                 $tvs = $this->modx->getCollection('modTemplateVar',$c);
 
                 $reloading = !empty($reloadData) && count($reloadData) > 0;
-                $this->modx->smarty->assign('tvcount',count($tvs));
+                $this->setPlaceholder('tvcount',count($tvs));
                 /** @var modTemplateVar $tv */
                 foreach ($tvs as $tv) {
+                    if (!$tv->checkResourceGroupAccess(null,'mgr')) {
+                        continue;
+                    }
                     $v = '';
                     $tv->set('inherited', false);
+                    /** @var int $cat */
                     $cat = (int)$tv->get('category');
                     $tvid = $tv->get('id');
                     if($reloading && array_key_exists('tv'.$tvid, $reloadData)) {
@@ -278,10 +309,10 @@ abstract class ResourceManagerController extends modManagerController {
                         $tv->set('value', $v);
                     } else {
                         $default = $tv->processBindings($tv->get('default_text'),$this->resource->get('id'));
-                        if (strpos($tv->get('default_text'),'@INHERIT') > -1 && (strcmp($default,$tv->get('value')) == 0 || $tv->get('value') == null)) {
+                        if (strpos($tv->get('default_text'),'@INHERIT') > -1 && (strcmp($default,$tv->get('value')) === 0 || $tv->get('value') === null)) {
                             $tv->set('inherited',true);
                         }
-                        if ($tv->get('value') == null) {
+                        if ($tv->get('value') === null) {
                             $v = $tv->get('default_text');
                             if ($tv->get('type') == 'checkbox' && $tv->get('value') == '') {
                                 $v = '';
@@ -295,23 +326,23 @@ abstract class ResourceManagerController extends modManagerController {
                             'tv' . $tv->get('id'),
                         ));
                     }
-                    $inputForm = $tv->renderInput($this->resource->get('id'), array('value'=> $v));
+                    $inputForm = $tv->renderInput($this->resource, array('value'=> $v));
                     if (empty($inputForm)) continue;
 
                     $tv->set('formElement',$inputForm);
                     if ($tv->get('type') != 'hidden') {
-                        if (!isset($categories[$cat]->tvs) || !is_array($categories[$cat]->tvs)) {
-                            $categories[$cat]->tvs = array();
-                            $categories[$cat]->tvCount = 0;
+                        if (!isset($categories[$cat]['tvs']) || !is_array($categories[$cat]['tvs'])) {
+                            $categories[$cat]['tvs'] = array();
+                            $categories[$cat]['tvCount'] = 0;
                         }
 
                         /* add to tv/category map */
                         $tvMap[$tv->get('id')] = $tv->category;
 
                         /* add TV to category array */
-                        $categories[$cat]->tvs[] = $tv;
+                        $categories[$cat]['tvs'][] = $tv;
                         if ($tv->get('type') != 'hidden') {
-                            $categories[$cat]->tvCount++;
+                            $categories[$cat]['tvCount']++;
                         }
                     } else {
                         $hidden[] = $tv;
@@ -323,16 +354,16 @@ abstract class ResourceManagerController extends modManagerController {
         $finalCategories = array();
         /** @var modCategory $category */
         foreach ($categories as $n => $category) {
-            if (is_object($category) && $category instanceof modCategory) {
-                $category->hidden = empty($category->tvCount) ? true : false;
-                $ct = isset($category->tvs) ? count($category->tvs) : 0;
+            if (is_array($category)) {
+                $category['hidden'] = empty($category['tvCount']) ? true : false;
+                $ct = isset($category['tvs']) ? count($category['tvs']) : 0;
                 if ($ct > 0) {
-                    $finalCategories[$category->get('id')] = $category;
+                    $finalCategories[$category['id']] = $category;
                     $this->tvCounts[$n] = $ct;
                 }
             }
         }
-        
+
         $onResourceTVFormRender = $this->modx->invokeEvent('OnResourceTVFormRender',array(
             'categories' => &$finalCategories,
             'template' => $templateId,
@@ -399,15 +430,16 @@ abstract class ResourceManagerController extends modManagerController {
             if(!isset($modx->registry)) {
                 $modx->getService('registry', 'registry.modRegistry');
             }
+            /** @var modRegistry $modx->registry */
             if(isset($modx->registry)) {
                 $modx->registry->addRegister('resource_reload', 'registry.modDbRegister', array('directory' => 'resource_reload'));
                 $this->reg = $modx->registry->resource_reload;
                 if($this->reg->connect()) {
-                    $topic = '/resourcereload/' . $scriptProperties['reload'] . '/';
+                    $topic = '/resourcereload/' . $scriptProperties['reload'];
                     $this->reg->subscribe($topic);
-                    $reloadData = $this->reg->read(array('poll_limit'=> 1, 'remove_read'=> true));
-                    if(is_array($reloadData) && is_string(reset($reloadData))) {
-                        $reloadData = @unserialize(reset($reloadData));
+                    $msgs = $this->reg->read(array('poll_limit'=> 1, 'remove_read'=> true));
+                    if(is_array($msgs)) {
+                        $reloadData = reset($msgs);
                     }
                     if(!is_array($reloadData)) {
                         $reloadData = array();
@@ -442,7 +474,7 @@ abstract class ResourceManagerController extends modManagerController {
         foreach ($resourceGroups['collection'] as $resourceGroup) {
             $access = (boolean) $resourceGroup->get('access');
             if (!empty($parent) && $this->resource->get('id') == 0) {
-                $resourceGroupArray['access'] = in_array($resourceGroup->get('id'),$parentGroups) ? true : false;
+                $access = in_array($resourceGroup->get('id'),$parentGroups) ? true : false;
             }
             $resourceGroupArray = array(
                 $resourceGroup->get('id'),
@@ -455,4 +487,11 @@ abstract class ResourceManagerController extends modManagerController {
         return $this->resourceArray['resourceGroups'];
     }
 
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Resources';
+    }
 }

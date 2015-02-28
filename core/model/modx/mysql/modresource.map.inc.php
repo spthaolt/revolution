@@ -7,6 +7,7 @@ $xpdo_meta_map['modResource']= array (
   'package' => 'modx',
   'version' => '1.1',
   'table' => 'site_content',
+  'extends' => 'modAccessibleSimpleObject',
   'inherit' => 'single',
   'fields' => 
   array (
@@ -640,7 +641,7 @@ $xpdo_meta_map['modResource']= array (
       array (
         'uri' => 
         array (
-          'length' => '1000',
+          'length' => '333',
           'collation' => 'A',
           'null' => true,
         ),
@@ -734,6 +735,69 @@ $xpdo_meta_map['modResource']= array (
         ),
       ),
     ),
+    'cache_refresh_idx' => 
+    array (
+      'alias' => 'cache_refresh_index',
+      'primary' => false,
+      'unique' => false,
+      'type' => 'BTREE',
+      'columns' => 
+      array (
+        'parent' => 
+        array (
+          'length' => '',
+          'collation' => 'A',
+          'null' => false,
+        ),
+        'menuindex' => 
+        array (
+          'length' => '',
+          'collation' => 'A',
+          'null' => false,
+        ),
+        'id' => 
+        array (
+          'length' => '',
+          'collation' => 'A',
+          'null' => false,
+        ),
+      ),
+    ),
+  ),
+  'composites' => 
+  array (
+    'TemplateVarResources' => 
+    array (
+      'class' => 'modTemplateVarResource',
+      'local' => 'id',
+      'foreign' => 'contentid',
+      'cardinality' => 'many',
+      'owner' => 'local',
+    ),
+    'ResourceGroupResources' => 
+    array (
+      'class' => 'modResourceGroupResource',
+      'local' => 'id',
+      'foreign' => 'document',
+      'cardinality' => 'many',
+      'owner' => 'local',
+    ),
+    'Acls' => 
+    array (
+      'class' => 'modAccessResource',
+      'local' => 'id',
+      'foreign' => 'target',
+      'owner' => 'local',
+      'cardinality' => 'many',
+    ),
+    'ContextResources' => 
+    array (
+      'class' => 'modContextResource',
+      'local' => 'id',
+      'foreign' => 'resource',
+      'cardinality' => 'many',
+      'owner' => 'local',
+    ),
   ),
   'aggregates' => 
   array (
@@ -824,41 +888,6 @@ $xpdo_meta_map['modResource']= array (
       'foreign' => 'key',
       'owner' => 'foreign',
       'cardinality' => 'one',
-    ),
-  ),
-  'composites' => 
-  array (
-    'TemplateVarResources' => 
-    array (
-      'class' => 'modTemplateVarResource',
-      'local' => 'id',
-      'foreign' => 'contentid',
-      'cardinality' => 'many',
-      'owner' => 'local',
-    ),
-    'ResourceGroupResources' => 
-    array (
-      'class' => 'modResourceGroupResource',
-      'local' => 'id',
-      'foreign' => 'document',
-      'cardinality' => 'many',
-      'owner' => 'local',
-    ),
-    'Acls' => 
-    array (
-      'class' => 'modAccessResource',
-      'local' => 'id',
-      'foreign' => 'target',
-      'owner' => 'local',
-      'cardinality' => 'many',
-    ),
-    'ContextResources' => 
-    array (
-      'class' => 'modContextResource',
-      'local' => 'id',
-      'foreign' => 'resource',
-      'cardinality' => 'many',
-      'owner' => 'local',
     ),
   ),
 );

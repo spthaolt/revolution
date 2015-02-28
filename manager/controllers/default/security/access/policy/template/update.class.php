@@ -24,8 +24,8 @@ class SecurityAccessPolicyTemplateUpdateManagerController extends modManagerCont
      * @return void
      */
     public function initialize() {
-        if (!empty($this->scriptProperties['id'])) {
-            $this->template = $this->modx->getObject('modAccessPolicyTemplate',$this->scriptProperties['id']);
+        if (!empty($this->scriptProperties['id']) && strlen($this->scriptProperties['id']) === strlen((integer)$this->scriptProperties['id'])) {
+            $this->template = $this->modx->getObject('modAccessPolicyTemplate', array('id' => $this->scriptProperties['id']));
         }
     }
 
@@ -58,7 +58,7 @@ class SecurityAccessPolicyTemplateUpdateManagerController extends modManagerCont
      */
     public function process(array $scriptProperties = array()) {
         if (empty($this->template)) return $this->failure($this->modx->lexicon('policy_template_err_nf'));
-        
+
         $placeholders = array();
 
         /* get permissions */
@@ -104,7 +104,7 @@ class SecurityAccessPolicyTemplateUpdateManagerController extends modManagerCont
      * @return string
      */
     public function getTemplateFile() {
-        return 'security/access/policy/template/update.tpl';
+        return '';
     }
 
     /**
@@ -113,5 +113,13 @@ class SecurityAccessPolicyTemplateUpdateManagerController extends modManagerCont
      */
     public function getLanguageTopics() {
         return array('user','access','policy','context');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'PolicyTemplates';
     }
 }

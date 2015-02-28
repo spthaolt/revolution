@@ -11,7 +11,9 @@ MODx.tree.UserGroup = function(config) {
     Ext.applyIf(config,{
         title: _('user_groups')
         ,id: 'modx-tree-usergroup'
-        ,url: MODx.config.connectors_url+'security/group.php'
+        ,url: MODx.config.connector_url
+        ,action: 'security/group/getnodes'
+        ,sortAction: 'security/group/sort'
         ,root_id: 'n_ug_0'
         ,root_name: _('user_groups')
         ,enableDrag: true
@@ -21,34 +23,31 @@ MODx.tree.UserGroup = function(config) {
         ,useDefaultToolbar: true
         ,tbar: [{
             text: _('user_group_new')
+            ,cls: 'primary-button'
             ,scope: this
             ,handler: this.createUserGroup.createDelegate(this,[true],true)
         }]
     });
     MODx.tree.UserGroup.superclass.constructor.call(this,config);
 };
-Ext.extend(MODx.tree.UserGroup,MODx.tree.Tree,{	
-    windows: {}
-	
-    ,addUser: function(item,e) {
+Ext.extend(MODx.tree.UserGroup,MODx.tree.Tree,{
+    addUser: function(item,e) {
         var n = this.cm.activeNode;
         var ug = n.id.substr(2).split('_');ug = ug[1];
         if (ug === undefined) {ug = 0;}
         var r = {usergroup: ug};
 
-        if (!this.windows.adduser) {
-            this.windows.adduser = MODx.load({
-                xtype: 'modx-window-usergroup-adduser'
-                ,record: r
-                ,listeners: {
-                    'success': {fn:this.refresh,scope:this}
-                }
-            });
-        }
-        this.windows.adduser.setValues(r);
-        this.windows.adduser.show(e.target);
+        var adduserWin = MODx.load({
+            xtype: 'modx-window-usergroup-adduser'
+            ,record: r
+            ,listeners: {
+                'success': {fn:this.refresh,scope:this}
+            }
+        });
+        adduserWin.setValues(r);
+        adduserWin.show(e.target);
     }
-	
+
     ,createUserGroup: function(item,e,tbar) {
         tbar = tbar || false;
         var p;
@@ -60,27 +59,22 @@ Ext.extend(MODx.tree.UserGroup,MODx.tree.Tree,{
 
         var r = {'parent': p};
 
-        if (!this.windows.createUsergroup) {
-            this.windows.createUsergroup = MODx.load({
-                xtype: 'modx-window-usergroup-create'
-                ,record: r
-                ,listeners: {
-                    'success': {fn:this.refresh,scope:this}
-                }
-            });
-        } else {
-            this.windows.createUsergroup.setValues(r);
-        }
-        this.windows.createUsergroup.show(e.target);
+        var createUsergroupWin = MODx.load({
+            xtype: 'modx-window-usergroup-create'
+            ,record: r
+            ,listeners: {
+                'success': {fn:this.refresh,scope:this}
+            }
+        });
+        createUsergroupWin.setValues(r);
+        createUsergroupWin.show(e.target);
     }
-    
+
     ,updateUserGroup: function(item,e) {
         var n = this.cm.activeNode;
         var id = n.id.substr(2).split('_');id = id[1];
-        
-        location.href = 'index.php'
-            + '?a=' + MODx.action['security/usergroup/update']
-            + '&id=' + id;
+
+        MODx.loadPage('security/usergroup/update', 'id=' + id);
     }
 
     ,getMenu: function() {
@@ -127,7 +121,7 @@ Ext.extend(MODx.tree.UserGroup,MODx.tree.Tree,{
 
         return m;
     }
-	
+
     ,removeUserGroup: function(item,e) {
         var n = this.cm.activeNode;
         var id = n.id.substr(2).split('_');id = id[1];
@@ -137,7 +131,7 @@ Ext.extend(MODx.tree.UserGroup,MODx.tree.Tree,{
             ,text: _('user_group_remove_confirm')
             ,url: this.config.url
             ,params: {
-                action: 'remove'
+                action: 'security/group/remove'
                 ,id: id
             }
             ,listeners: {
@@ -156,7 +150,7 @@ Ext.extend(MODx.tree.UserGroup,MODx.tree.Tree,{
             ,text: _('user_group_user_remove_confirm')
             ,url: this.config.url
             ,params: {
-                action: 'removeUser'
+                action: 'security/group/removeUser'
                 ,user_id: user_id
                 ,group_id: group_id
             }
@@ -189,17 +183,23 @@ MODx.window.CreateUserGroup = function(config) {
     Ext.applyIf(config,{
         title: _('create_user_group')
         ,id: this.ident
-        ,height: 150
-        ,width: 375
-        ,url: MODx.config.connectors_url+'security/group.php'
-        ,action: 'create'
+        // ,height: 150
+        ,width: 700
+        ,stateful: false
+        ,url: MODx.config.connector_url
+        ,action: 'security/group/create'
         ,fields: [{
+            name: 'parent'
+            ,id: 'modx-'+this.ident+'-parent'
+            ,xtype: 'hidden'
+        },{
             xtype: 'textfield'
             ,fieldLabel: _('name')
             ,description: MODx.expandHelp ? '' : _('user_group_desc_name')
             ,name: 'name'
             ,id: 'modx-'+this.ident+'-name'
             ,anchor: '100%'
+            ,allowBlank: false
         },{
             xtype: MODx.expandHelp ? 'label' : 'hidden'
             ,forId: 'modx-'+this.ident+'-name'
@@ -218,9 +218,119 @@ MODx.window.CreateUserGroup = function(config) {
             ,html: _('user_group_desc_description')
             ,cls: 'desc-under'
         },{
-            name: 'parent'
-            ,id: 'modx-'+this.ident+'-parent'
-            ,xtype: 'hidden'
+            xtype: 'fieldset'
+            ,collapsible: true
+            ,collapsed: false
+            ,autoHeight: true
+            ,title: _('user_group_aw')
+            ,items: [{
+                html: '<p style="margin: 5px 0 0">'+_('user_group_aw_desc')+'</p>'
+                ,cls: 'desc-under'
+            },{
+                layout: 'column'
+                ,border: false
+                ,defaults: {
+                    layout: 'form'
+                    ,labelAlign: 'top'
+                    ,anchor: '100%'
+                    ,border: false
+                }
+                ,items: [{
+                    columnWidth: .5
+                    ,items: [{
+                        xtype: 'textfield'
+                        ,name: 'aw_users'
+                        ,fieldLabel: _('user_group_aw_users')
+                        ,description: _('user_group_aw_users_desc')
+                        ,id: this.ident+'-aw-users'
+                        ,anchor: '100%'
+                        ,value: ''
+                    },{
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
+                        ,forId: this.ident+'-aw-users'
+                        ,html: _('user_group_aw_users_desc')
+                        ,cls: 'desc-under'
+                    },{
+                        fieldLabel: _('user_group_aw_resource_groups')
+                        ,description: _('user_group_aw_resource_groups_desc')
+                        ,name: 'aw_resource_groups'
+                        ,id: this.ident+'-aw-resource-groups'
+                        ,xtype: 'textfield'
+                        ,value: ''
+                        ,anchor: '100%'
+                    },{
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
+                        ,forId: this.ident+'-aw-resource-groups'
+                        ,html: _('user_group_aw_resource_groups_desc')
+                        ,cls: 'desc-under'
+
+                    },{
+                        boxLabel: _('user_group_aw_parallel')
+                        ,description: _('user_group_aw_parallel_desc')
+                        ,name: 'aw_parallel'
+                        ,id: this.ident+'-aw-parallel'
+                        ,xtype: 'checkbox'
+                        ,checked: false
+                        ,inputValue: 1
+                        ,anchor: '100%'
+                    },{
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
+                        ,forId: this.ident+'-aw-parallel'
+                        ,html: _('user_group_aw_parallel_desc')
+                        ,cls: 'desc-under'
+                    }]
+                },{
+                    columnWidth: .5
+                    ,items: [{
+                        xtype: 'textfield'
+                        ,name: 'aw_contexts'
+                        ,fieldLabel: _('contexts')
+                        ,description: MODx.expandHelp ? '' : _('user_group_aw_contexts_desc')
+                        ,id: this.ident+'-aw-contexts'
+                        ,anchor: '100%'
+                        ,value: 'web'
+                    },{
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
+                        ,forId: this.ident+'-aw-contexts'
+                        ,html: _('user_group_aw_contexts_desc')
+                        ,cls: 'desc-under'
+
+                    },{
+                        xtype: 'modx-combo-policy'
+                        ,baseParams: {
+                            action: 'security/access/policy/getList'
+                            ,group: 'Admin'
+                            ,combo: '1'
+                        }
+                        ,name: 'aw_manager_policy'
+                        ,fieldLabel: _('user_group_aw_manager_policy')
+                        ,description: MODx.expandHelp ? '' : _('user_group_aw_manager_policy_desc')
+                        ,id: this.ident+'-aw-manager-policy'
+                        ,anchor: '100%'
+                        ,allowBlank: true
+                    },{
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
+                        ,forId: this.ident+'-aw-manager-policy'
+                        ,html: _('user_group_aw_manager_policy_desc')
+                        ,cls: 'desc-under'
+
+                    },{
+                        fieldLabel: _('user_group_aw_categories')
+                        ,description: _('user_group_aw_categories_desc')
+                        ,name: 'aw_categories'
+                        ,id: this.ident+'-aw-categories'
+                        ,xtype: 'textfield'
+                        ,value: ''
+                        ,anchor: '100%'
+                    },{
+                        xtype: MODx.expandHelp ? 'label' : 'hidden'
+                        ,forId: this.ident+'-aw-categories'
+                        ,html: _('user_group_aw_categories_desc')
+                        ,cls: 'desc-under'
+
+                    }]
+                }]
+            }]
         }]
         ,keys: []
     });
@@ -235,10 +345,10 @@ MODx.window.AddUserToUserGroup = function(config) {
     Ext.applyIf(config,{
         title: _('user_group_user_add')
         ,id: this.ident
-        ,height: 150
-        ,width: 375
-        ,url: MODx.config.connectors_url+'security/usergroup/user.php'
-        ,action: 'create'
+        // ,height: 150
+        // ,width: 375
+        ,url: MODx.config.connector_url
+        ,action: 'security/group/user/create'
         ,fields: [{
             fieldLabel: _('name')
             ,description: MODx.expandHelp ? '' : _('user_group_user_add_user_desc')

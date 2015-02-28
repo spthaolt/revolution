@@ -8,17 +8,18 @@ MODx.window.PackageUninstall = function(config) {
     config = config || {};
     Ext.applyIf(config,{
         title: _('package_uninstall')
-        ,url: MODx.config.connectors_url+'workspace/packages.php'
-        ,action: ''
-        ,height: 400
-        ,width: 500
+        ,url: MODx.config.connector_url
+        ,action: 'workspace/packages/uninstall'
+        // ,height: 400
+        // ,width: 400
         ,id: 'modx-window-package-uninstall'
         ,saveBtnText: _('uninstall')
         ,fields: [{
             html: _('preexisting_mode_select')
-            ,border: false
-            ,autoHeight: true
-        },MODx.PanelSpacer,{
+            ,cls: 'win-desc panel-desc'
+            // ,border: false
+            // ,autoHeight: true
+        },{
             xtype: 'radio'
             ,name: 'preexisting_mode'
             ,fieldLabel: _('preexisting_mode_preserve')
@@ -60,9 +61,9 @@ MODx.window.RemovePackage = function(config) {
     config = config || {};
     Ext.applyIf(config,{
         title: _('package_remove')
-        ,url: MODx.config.connectors_url+'workspace/packages.php'
+        ,url: MODx.config.connector_url
         ,baseParams: {
-            action: 'uninstall'
+            action: 'workspace/packages/uninstall'
         }
         ,defaults: { border: false }
         ,fields: [{
@@ -73,12 +74,13 @@ MODx.window.RemovePackage = function(config) {
         },{
             html: _('package_remove_confirm')
         },MODx.PanelSpacer,{
-            html: _('package_remove_force_desc') 
+            html: _('package_remove_force_desc')
             ,border: false
-        },MODx.PanelSpacer,{
+        },{
             xtype: 'xcheckbox'
             ,name: 'force'
             ,boxLabel: _('package_remove_force')
+            ,hideLabel: true
             ,id: 'modx-rpack-force'
             ,labelSeparator: ''
             ,inputValue: 'true'
@@ -90,17 +92,17 @@ MODx.window.RemovePackage = function(config) {
 Ext.extend(MODx.window.RemovePackage,MODx.Window,{
     submit: function() {
         var r = this.config.record;
-        if (this.fp.getForm().isValid()) {            
+        if (this.fp.getForm().isValid()) {
             Ext.getCmp('modx-package-grid').loadConsole(Ext.getBody(),r.topic);
             this.fp.getForm().baseParams = {
-                action: 'remove'
+                action: 'workspace/packages/remove'
                 ,signature: r.signature
                 ,register: 'mgr'
                 ,topic: r.topic
                 ,force: Ext.getCmp('modx-rpack-force').getValue()
             };
-            
-            this.fp.getForm().submit({ 
+
+            this.fp.getForm().submit({
                 waitMsg: _('saving')
                 ,scope: this
                 ,failure: function(frm,a) {
@@ -124,7 +126,7 @@ Ext.extend(MODx.window.RemovePackage,MODx.Window,{
     }
 });
 Ext.reg('modx-window-package-remove',MODx.window.RemovePackage);
-	
+
 /**
  * @class MODx.window.SetupOptions
  * @extends MODx.Window
@@ -137,7 +139,7 @@ MODx.window.SetupOptions = function(config) {
     Ext.applyIf(config,{
         title: _('setup_options')
 		,layout: 'form'
-		,items:[{			
+		,items:[{
 			xtype: 'modx-template-panel'
 			,id: 'modx-setupoptions-panel'
 			,bodyCssClass: 'win-desc panel-desc'
@@ -148,13 +150,14 @@ MODx.window.SetupOptions = function(config) {
 			,xtype: 'form'
 			,bodyCssClass: 'inline-form'
 			,id: 'modx-setupoptions-form'
-		}] 
+		}]
 		,buttons :[{
 			text: config.cancelBtnText || _('cancel')
             ,scope: this
             ,handler: function() { this.hide(); }
 		},{
 			text: _('package_install')
+            ,cls: 'primary-button'
 			,id:'package-setupoptions-install-btn'
 			,handler: this.install
 			,scope: this
@@ -166,14 +169,14 @@ Ext.extend(MODx.window.SetupOptions,MODx.Window,{
 	fetch: function(content){
 		Ext.getCmp('modx-setupoptions-form').getForm().getEl().update(content);
 	}
-	
-	,install: function(btn, ev){	
+
+	,install: function(btn, ev){
 		this.hide();
 		var options = Ext.getCmp('modx-setupoptions-form').getForm().getValues();
-		Ext.getCmp('modx-panel-packages').install( options );		
+		Ext.getCmp('modx-panel-packages').install( options );
 	}
 });
-Ext.reg('modx-package-setupoptions', MODx.window.SetupOptions);	
+Ext.reg('modx-package-setupoptions', MODx.window.SetupOptions);
 
 /**
  * @class MODx.window.ChangeProvider
@@ -185,7 +188,7 @@ MODx.window.ChangeProvider = function(config) {
     config = config || {};
     Ext.applyIf(config,{
         title: _('provider_select')
-        ,width: 400
+        ,width: 600 // prevents primary button text from being cut off if it is a long string
 		,layout: 'form'
 		,items:[{
 			xtype: 'modx-template-panel'
@@ -197,24 +200,26 @@ MODx.window.ChangeProvider = function(config) {
 			xtype: 'form'
 			,id: 'change-provider-form'
 			,border: false
-			,bodyCssClass: 'main-wrapper'
+			// ,bodyCssClass: 'main-wrapper'
 			,items:[{
 				fieldLabel: _('provider')
 				,xtype: 'modx-combo-provider'
 				,id: 'modx-pdselprov-provider'
+                ,anchor: '100%'
 				,allowBlank: false
 				,baseParams: {
-                    action: 'getList'
+                    action: 'workspace/providers/getList'
                     ,showNone: false
                 }
-			}]			
-		}] 
+			}]
+		}]
 		,buttons :[{
 			text: config.cancelBtnText || _('cancel')
             ,scope: this
             ,handler: function() { this.hide(); }
 		},{
 			text: _('save_and_go_to_browser')
+            ,cls: 'primary-button'
 			,id:'package-cp-btn'
 			,handler: this.submit
 			,scope: this
@@ -222,18 +227,27 @@ MODx.window.ChangeProvider = function(config) {
     });
     MODx.window.ChangeProvider.superclass.constructor.call(this,config);
 };
-Ext.extend(MODx.window.ChangeProvider,Ext.Window,{ //Using MODx.Window would create an empty unused form (It's not a bug)) 
-	submit: function(o) {		
+Ext.extend(MODx.window.ChangeProvider,Ext.Window,{ //Using MODx.Window would create an empty unused form (It's not a bug))
+	submit: function(o) {
 		var fm = Ext.getCmp('change-provider-form');
         if (fm.getForm().isValid()) {
             var vs = fm.getForm().getValues();
             MODx.provider = vs.provider;
             MODx.providerName = fm.getForm().findField('provider').getRawValue();
-            Ext.getCmp('modx-package-browser-tree').setProvider(vs.provider);
+            var tree = Ext.getCmp('modx-package-browser-tree');
+            tree.setProvider(vs.provider);
+            if (tree.rendered) {
+                var loader = tree.getLoader();
+                loader.baseParams = {
+                    action: 'workspace/packages/rest/getNodes'
+                    ,provider: vs.provider
+                };
+                loader.load(tree.root);
+            }
             MODx.debug('Switching to: '+MODx.provider);
 			this.hide();
 			Ext.getCmp('modx-panel-packages-browser').activate();
-        }		
+        }
     }
 });
 Ext.reg('modx-package-changeprovider', MODx.window.ChangeProvider);

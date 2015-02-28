@@ -61,8 +61,10 @@ class ElementPluginUpdateManagerController extends modManagerController {
         $placeholders = array();
 
         /* load plugin */
-        if (empty($scriptProperties['id'])) return $this->failure($this->modx->lexicon('plugin_err_ns'));
-        $this->plugin = $this->modx->getObject('modPlugin',$scriptProperties['id']);
+        if (empty($scriptProperties['id']) || strlen($scriptProperties['id']) !== strlen((integer)$scriptProperties['id'])) {
+            return $this->failure($this->modx->lexicon('plugin_err_ns'));
+        }
+        $this->plugin = $this->modx->getObject('modPlugin', array('id' => $scriptProperties['id']));
         if ($this->plugin == null) return $this->failure($this->modx->lexicon('plugin_err_nf'));
         if (!$this->plugin->checkPolicy('view')) return $this->failure($this->modx->lexicon('access_denied'));
         
@@ -130,6 +132,7 @@ class ElementPluginUpdateManagerController extends modManagerController {
             'mode' => modSystemEvent::MODE_UPD,
         ));
         if (is_array($this->onPluginFormPrerender)) $this->onPluginFormPrerender = implode('',$this->onPluginFormPrerender);
+        $this->setPlaceholder('onPluginFormPrerender', $this->onPluginFormPrerender);
     }
 
     /**
@@ -170,5 +173,13 @@ class ElementPluginUpdateManagerController extends modManagerController {
      */
     public function getLanguageTopics() {
         return array('plugin','category','system_events','propertyset','element');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'Plugins';
     }
 }

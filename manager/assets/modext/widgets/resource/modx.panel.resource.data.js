@@ -6,8 +6,10 @@ MODx.panel.ResourceData = function(config) {
         ,width: 300
     };
     Ext.applyIf(config,{
-        url: MODx.config.connectors_url+'resource/index.php'
-        ,baseParams: {}
+        url: MODx.config.connector_url
+        ,baseParams: {
+            action: 'resource/data'
+        }
         ,id: 'modx-panel-resource-data'
         ,class_key: 'modResource'
         ,cls: 'container form-with-labels'
@@ -148,6 +150,7 @@ MODx.panel.ResourceData = function(config) {
                 ,id: 'modx-rdata-buffer'
                 ,xtype: 'textarea'
                 ,hideLabel: true
+                ,readOnly: true
                 ,width: '90%'
                 ,grow: true
             }]
@@ -160,6 +163,13 @@ MODx.panel.ResourceData = function(config) {
         }
     });
     MODx.panel.ResourceData.superclass.constructor.call(this,config);
+
+    // prevent backspace key from going to the previous page in browser history
+    Ext.EventManager.on(window, 'keydown', function(e, t) {
+        if (e.getKey() == e.BACKSPACE && t.readOnly) {
+            e.stopEvent();
+        }
+    });
 };
 Ext.extend(MODx.panel.ResourceData,MODx.FormPanel,{
     setup: function() {
@@ -168,9 +178,9 @@ Ext.extend(MODx.panel.ResourceData,MODx.FormPanel,{
         	return false;
         }
         MODx.Ajax.request({
-            url: MODx.config.connectors_url+'resource/index.php'
+            url: MODx.config.connector_url
             ,params: {
-                action: 'data'
+                action: 'resource/data'
                 ,id: this.config.resource
                 ,class_key: this.config.class_key
             }

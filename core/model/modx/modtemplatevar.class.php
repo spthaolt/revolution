@@ -19,7 +19,7 @@
  * @property string $properties An array of default properties for this TV
  * @property string $input_properties An array of input properties related to the rendering of the input of this TV
  * @property string $output_properties An array of output properties related to the rendering of the output of this TV
- * 
+ *
  * @todo Refactor this to allow user-defined and configured input and output
  * widgets.
  * @see modTemplateVarResource
@@ -45,6 +45,13 @@ class modTemplateVar extends modElement {
     );
     /** @var modX $xpdo */
     public $xpdo;
+
+    /**
+     * A cache for modTemplateVar::getRenderDirectories()
+     * @see getRenderDirectories()
+     * @var array $_renderPaths
+     */
+    private static $_renderPaths = array();
 
     /**
      * Creates a modTemplateVar instance, and sets the token of the class to *
@@ -158,6 +165,7 @@ class modTemplateVar extends modElement {
 
             $this->_processed= true;
         }
+        $this->xpdo->parser->setProcessingElement(false);
         /* finally, return the processed element content */
         return $this->_output;
     }
@@ -266,7 +274,7 @@ class modTemplateVar extends modElement {
         }
 
         /* run prepareOutput to allow for custom overriding */
-        $value = $this->prepareOutput($value);
+        $value = $this->prepareOutput($value, $resourceId);
 
         /* find the render */
         $outputRenderPaths = $this->getRenderDirectories('OnTVOutputRenderList','output');
@@ -276,14 +284,17 @@ class modTemplateVar extends modElement {
     /**
      * Prepare the output in this method to allow processing of this without depending on the actual render of the output
      * @param string $value
+     * @param integer $resourceId The id of the resource; 0 defaults to the
+     * current resource.
      * @return string
      */
-    public function prepareOutput($value) {
+    public function prepareOutput($value, $resourceId= 0) {
         /* Allow custom source types to manipulate the output URL for image/file tvs */
         $mTypes = $this->xpdo->getOption('manipulatable_url_tv_output_types',null,'image,file');
         $mTypes = explode(',',$mTypes);
         if (!empty($value) && in_array($this->get('type'),$mTypes)) {
-            $sourceCache = $this->getSourceCache($this->xpdo->context->get('key'));
+            $context = !empty($resourceId) ? $this->xpdo->getObject('modResource', $resourceId)->get('context_key') : $this->xpdo->context->get('key');
+            $sourceCache = $this->getSourceCache($context);
             if (!empty($sourceCache) && !empty($sourceCache['class_key'])) {
                 $coreSourceClasses = $this->xpdo->getOption('core_media_sources',null,'modFileMediaSource,modS3MediaSource');
                 $coreSourceClasses = explode(',',$coreSourceClasses);
@@ -294,7 +305,10 @@ class modTemplateVar extends modElement {
                     if ($source) {
                         $source->fromArray($sourceCache,'',true,true);
                         $source->initialize();
-                        $value = $source->prepareOutputUrl($value);
+                        $isAbsolute = strpos($value,'http://') === 0 || strpos($value,'https://') === 0 || strpos($value,'ftp://') === 0;
+                        if (!$isAbsolute) {
+                            $value = $source->prepareOutputUrl($value);
+                        }
                     }
                 }
             }
@@ -306,14 +320,20 @@ class modTemplateVar extends modElement {
      * Renders input forms for the template variable.
      *
      * @access public
-     * @param integer $resourceId The id of the resource; 0 defaults to the
-     * current resource.
+     * @param modResource|null $resource The resource; 0 defaults to the current resource.
      * @param mixed $options Array of options ('value', 'style') or deprecated $style string
      * @return mixed The rendered input for the template variable.
      */
-    public function renderInput($resourceId= 0, $options) {
+    public function renderInput($resource= null, $options = array()) {
+        if (is_int($resource)) {
+            $resource = $this->xpdo->getObject('modResource',$resource);
+        }
+        if (empty($resource)) {
+            $resource = $this->xpdo->resource;
+        }
+        $resourceId = $resource ? $resource->get('id') : 0;
 
-        if(is_string($options) && !empty($options)) {
+        if (is_string($options) && !empty($options)) {
             // fall back to deprecated $style setting
             $style = $options;
         } else {
@@ -337,7 +357,7 @@ class modTemplateVar extends modElement {
         }
 
         /* if any FC tvDefault rules, set here */
-        $value = $this->checkForFormCustomizationRules($value,$resourceId);
+        $value = $this->checkForFormCustomizationRules($value,$resource);
         /* properly set value back if any FC rules, resource values, or bindings have adjusted it */
         $this->set('value',$value);
         $this->set('processedValue',$value);
@@ -479,14 +499,21 @@ class modTemplateVar extends modElement {
      * @return array The found render directories
      */
     public function getRenderDirectories($event,$subdir) {
-        $renderPath = $this->xpdo->getOption('processors_path').'element/tv/renders/'.$this->xpdo->context->get('key').'/'.$subdir.'/';
+        $context = $this->xpdo->context->get('key');
+        $renderPath = $this->xpdo->getOption('processors_path').'element/tv/renders/'.$context.'/'.$subdir.'/';
         $renderDirectories = array(
             $renderPath,
             $this->xpdo->getOption('processors_path').'element/tv/renders/'.($subdir == 'input' ? 'mgr' : 'web').'/'.$subdir.'/',
         );
         $pluginResult = $this->xpdo->invokeEvent($event,array(
-            'context' => $this->xpdo->context->get('key'),
+            'context' => $context,
         ));
+        $pathsKey = serialize($pluginResult).$context.$event.$subdir;
+        /* return cached value if exists */
+        if (isset(self::$_renderPaths[$pathsKey])) {
+            return self::$_renderPaths[$pathsKey];
+        }
+        /* process if there is no cached value */
         if (!is_array($pluginResult) && !empty($pluginResult)) { $pluginResult = array($pluginResult); }
         if (!empty($pluginResult)) {
             foreach ($pluginResult as $result) {
@@ -496,7 +523,6 @@ class modTemplateVar extends modElement {
         }
 
         /* search directories */
-        $types = array();
         $renderPaths = array();
         foreach ($renderDirectories as $renderDirectory) {
             if (empty($renderDirectory) || !is_dir($renderDirectory)) continue;
@@ -508,24 +534,29 @@ class modTemplateVar extends modElement {
                 }
             } catch (UnexpectedValueException $e) {}
         }
-        $renderPaths = array_unique($renderPaths);
-        return $renderPaths;
+        self::$_renderPaths[$pathsKey] = array_unique($renderPaths);
+        return self::$_renderPaths[$pathsKey];
     }
 
     /**
      * Check for any Form Customization rules for this TV
      * @param string $value
-     * @param int $resourceId
+     * @param modResource $resource
      * @return mixed
      */
-    public function checkForFormCustomizationRules($value,$resourceId = 0) {
+    public function checkForFormCustomizationRules($value,&$resource) {
         if ($this->xpdo->request && $this->xpdo->user instanceof modUser) {
-            $resource = false;
-            if (!empty($resourceId)) {
-                /** @var modResource $resource */
-                $resource = $this->xpdo->getObject('modResource',$resourceId);
+            if (empty($resource)) {
+                $resource =& $this->xpdo->resource;
             }
-            $userGroups = $this->xpdo->user->getUserGroups();
+            if ($this->xpdo->getOption('form_customization_use_all_groups',null,false)) {
+                $userGroups = $this->xpdo->user->getUserGroups();
+            } else {
+                $primaryGroup = $this->xpdo->user->getPrimaryGroup();
+                if ($primaryGroup) {
+                    $userGroups = array($primaryGroup->get('id'));
+                }
+            }
             $c = $this->xpdo->newQuery('modActionDom');
             $c->innerJoin('modFormCustomizationSet','FCSet');
             $c->innerJoin('modFormCustomizationProfile','Profile','FCSet.profile = Profile.id');
@@ -542,16 +573,18 @@ class modTemplateVar extends modElement {
                 'FCSet.active' => true,
                 'Profile.active' => true,
             ));
-            $c->where(array(
-                array(
-                    'ProfileUserGroup.usergroup:IN' => $userGroups,
+            if (!empty($userGroups)) {
+                $c->where(array(
                     array(
-                        'OR:ProfileUserGroup.usergroup:IS' => null,
-                        'AND:UGProfile.active:=' => true,
+                        'ProfileUserGroup.usergroup:IN' => $userGroups,
+                        array(
+                            'OR:ProfileUserGroup.usergroup:IS' => null,
+                            'AND:UGProfile.active:=' => true,
+                        ),
                     ),
-                ),
-                'OR:ProfileUserGroup.usergroup:=' => null,
-            ),xPDOQuery::SQL_AND,null,2);
+                    'OR:ProfileUserGroup.usergroup:=' => null,
+                ),xPDOQuery::SQL_AND,null,2);
+            }
             if (!empty($this->xpdo->request) && !empty($this->xpdo->request->action)) {
                 $c->where(array(
                     'modActionDom.action' => $this->xpdo->request->action,
@@ -569,12 +602,23 @@ class modTemplateVar extends modElement {
             $domRules = $this->xpdo->getCollection('modActionDom',$c);
             /** @var modActionDom $rule */
             foreach ($domRules as $rule) {
-                if (!empty($resourceId)) {
+                if (!empty($resource)) {
                     $template = $rule->get('template');
-                    if (!empty($template)) {
-                        if ($resource && $template != $resource->get('template')) continue;
+                    if (!empty($template) && $template != $resource->get('template')) {
+                        continue;
+                    }
+
+                    $constraintClass = $rule->get('constraint_class');
+                    if (!empty($constraintClass)) {
+                        if (!($resource instanceof $constraintClass)) continue;
+                        $constraintField = $rule->get('constraint_field');
+                        $constraint = $rule->get('constraint');
+                        if ($resource->get($constraintField) != $constraint) {
+                            continue;
+                        }
                     }
                 }
+                
                 switch ($rule->get('rule')) {
                     case 'tvVisible':
                         if ($rule->get('value') == 0) {
@@ -635,32 +679,28 @@ class modTemplateVar extends modElement {
     }
 
     /**
-     * Returns an string if a delimiter is present. Returns array if is a recordset is present.
+     * Returns a string or array representation of input options from a source.
      *
-     * @access public
-     * @param mixed $src Source object, either a recordset, PDOStatement, array or string.
-     * @param string $delim Delimiter for string parsing.
+     * @param mixed $src A PDOStatement, array or string source to parse.
+     * @param string $delim A delimiter for string parsing.
      * @param string $type Type to return, either 'string' or 'array'.
      *
      * @return string|array If delimiter present, returns string, otherwise array.
      */
     public function parseInput($src, $delim= "||", $type= "string") {
-        if (is_resource($src)) {
-            /* must be a recordset */
-            $rows= array ();
-            while ($cols= mysql_fetch_row($src))
-                $rows[]= ($type == "array") ? $cols : implode(" ", $cols);
-            return ($type == "array") ? $rows : implode($delim, $rows);
-        } elseif (is_object($src)) {
-            $rs= $src->fetchAll(PDO::FETCH_ASSOC);
-            if ($type != "array") {
-                foreach ($rs as $row) {
-                    $rows[]= implode(" ", $row);
+        if (is_object($src)) {
+            if ($src instanceof PDOStatement) {
+                $rs= $src->fetchAll(PDO::FETCH_ASSOC);
+                if ($type != "array") {
+                    $rows = array();
+                    foreach ($rs as $row) {
+                        $rows[]= implode(" ", $row);
+                    }
+                } else {
+                    $rows= $rs;
                 }
-            } else {
-                $rows= $rs;
+                return ($type == "array" ? $rows : implode($delim, $rows));
             }
-            return ($type == "array" ? $rows : implode($delim, $rows));
         } elseif (is_array($src) && $type == "array") {
             return ($type == "array" ? $src : implode($delim, $src));
         } else {
@@ -673,18 +713,15 @@ class modTemplateVar extends modElement {
     }
 
     /**
-     * Parses input options sent through postback.
+     * Parses input options sent through post back.
      *
-     * @access public
-     * @param mixed $v The options to parse, either a recordset, PDOStatement, array or string.
+     * @param mixed $v A PDOStatement, array or string to parse.
      * @return mixed The parsed options.
      */
     public function parseInputOptions($v) {
         $a = array();
         if(is_array($v)) return $v;
-        else if(is_resource($v)) {
-            while ($cols = mysql_fetch_row($v)) $a[] = $cols;
-        } else if (is_object($v)) {
+        else if (is_object($v)) {
             $a = $v->fetchAll(PDO::FETCH_ASSOC);
         }
         else $a = explode("||", $v);
@@ -947,7 +984,7 @@ class modTemplateVar extends modElement {
                             "JOIN {$resourceGroupTable} ResourceGroup ON Acl.principal_class = 'modUserGroup' " .
                             "AND (Acl.context_key = :context OR Acl.context_key IS NULL OR Acl.context_key = '') " .
                             "AND ResourceGroup.tmplvarid = :element " .
-                            "AND ResourceGroup.documentgroup = acl.target " .
+                            "AND ResourceGroup.documentgroup = Acl.target " .
                             "ORDER BY Acl.target, Acl.principal, Acl.authority";
                     $bindings = array(
                         ':element' => $this->get('id'),
@@ -1019,6 +1056,35 @@ class modTemplateVar extends modElement {
         ));
         return !empty($templateVarTemplate) && is_object($templateVarTemplate);
     }
+
+    /**
+     * Check to see if the
+     * @param modUser|null $user
+     * @param string $context
+     * @return bool
+     */
+    public function checkResourceGroupAccess($user = null,$context = '') {
+        $context = !empty($context) ? $context : '';
+
+        $c = $this->xpdo->newQuery('modResourceGroup');
+        $c->innerJoin('modTemplateVarResourceGroup','TemplateVarResourceGroups',array(
+            'TemplateVarResourceGroups.documentgroup = modResourceGroup.id',
+            'TemplateVarResourceGroups.tmplvarid' => $this->get('id'),
+        ));
+        $resourceGroups = $this->xpdo->getCollection('modResourceGroup',$c);
+        $hasAccess = true;
+        if (!empty($resourceGroups)) {
+            $hasAccess = false;
+            /** @var modResourceGroup $resourceGroup */
+            foreach ($resourceGroups as $resourceGroup) {
+                if ($resourceGroup->hasAccess($user,$context)) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+        }
+        return $hasAccess;
+    }
 }
 
 /**
@@ -1057,6 +1123,17 @@ abstract class modTemplateVarRender {
      * @return mixed|void
      */
     public function render($value,array $params = array()) {
+        if (!empty($params)) {
+            foreach ($params as $k => $v) {
+                if ($v === 'true') {
+                    $params[$k] = TRUE;
+                } elseif ($v === 'false') {
+                    $params[$k] = FALSE;
+                } elseif (is_numeric($v)) {
+                    $params[$k] = intval($v);
+                }
+            }
+        }
         $this->_loadLexiconTopics();
         return $this->process($value,$params);
     }
@@ -1066,7 +1143,7 @@ abstract class modTemplateVarRender {
      */
     protected function _loadLexiconTopics() {
         $topics = $this->getLexiconTopics();
-        if (!empty($topics) && !is_array($topics)) {
+        if (!empty($topics) && is_array($topics)) {
             foreach ($topics as $topic) {
                 $this->modx->lexicon->load($topic);
             }

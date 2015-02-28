@@ -1,8 +1,8 @@
 <?php
 /**
- * Access Italian lexicon topic
+ * Access English lexicon topic
  *
- * @language it
+ * @language en
  * @package modx
  * @subpackage lexicon
  */
@@ -59,6 +59,7 @@ $_lang['access_rgroup_err_ns'] = 'ACL per gruppo di risorse non specificata.';
 $_lang['access_rgroup_err_remove'] = 'Un errore è occorso mentre tentavo di rimuovere l\'ACL per il Gruppo di Risorse.';
 $_lang['access_rgroup_remove'] = 'Rimuovi l\'Accesso al Gruppo di Risorse';
 $_lang['access_rgroup_update'] = 'Aggiorna l\'Accesso al Gruppo di Risorse';
+$_lang['access_source_err_ae'] = 'Esiste già un ACL per quella Media Source.';
 $_lang['access_source_remove'] = 'Rimuovi Accesso Sorgenti Media';
 $_lang['access_source_update'] = 'Aggiorna Accesso Sorgenti Media ';
 $_lang['access_to_contexts'] = 'Accesso ai Contesti';
@@ -94,8 +95,35 @@ $_lang['resource_group_resource_err_nf'] = 'La risorsa non è parte di questo gr
 $_lang['resource_group_resource_err_remove'] = 'Un errore è occorso mentre tentavo di rimuovere la risorsa dal gruppo risorse.';
 $_lang['resource_group_untitled'] = 'Gruppo Risorse senza titolo';
 $_lang['resource_group_update'] = 'Aggiorna Gruppo Risorse';
-$_lang['roles_msg'] = 'Un ruolo è, per definizione, una posizione o uno status che uno detiene in una certa situazione. Possono essere usati per raggruppare gli Utenti in posizioni o status all\'interno di un Gruppo Utenti. I Ruoli in MODX hanno anche quella che si chiama "Autorità", definita da un valore numerico intero. I livelli di Autorità sono "ereditabili in basso", nel senso che un Ruolo con Autorità 1 erediterà qualunque Policy di Gruppo assegnata a se stesso e a qualunque ruolo con livello di Autorità maggiore di 1.';
+$_lang['resource_group_access_contexts'] = 'Un elenco, separato da virgole, di Contesti che il Gruppo di Risorse dovrebbe riguardare per le seguenti opzioni.';
+$_lang['resource_group_automatic_access'] = 'Accesso Wizard';
+$_lang['resource_group_automatic_access_desc'] = 'Nota: potresti dover ripulire le sessioni dopo l\'aggiunta del Gruppo di Risorse se selezioni una qualsiasi delle opzioni seguenti.';
+$_lang['resource_group_access_admin'] = 'Concedi automaticamente l\'accesso al Gruppo Amministratori';
+$_lang['resource_group_access_admin_desc'] = 'Se selezionato, darai al Gruppo Amministratori i permessi di lettura e scrittura a questo Gruppo di Risorse per i contesti di cui sopra.';
+$_lang['resource_group_access_anon'] = 'Concedi automaticamente l\'accesso Anonimo';
+$_lang['resource_group_access_anon_desc'] = 'Se selezionato, darai agli utenti non loggati i permessi di lettura a questo Gruppo di Risorse per i contesti di cui sopra.';
+$_lang['resource_group_access_parallel'] = 'Crea Gruppo Utenti Parallelo';
+$_lang['resource_group_access_parallel_desc'] = 'Se selezionata, verr&agrave; creato automaticamente un Gruppo Utenti con lo stesso nome, e saranno dati i permessi di lettura a questo Gruppo di Risorse per i contesti di cui sopra.';
+$_lang['resource_group_access_ugs'] = 'Concedi automaticamente l\'accesso agli altri Gruppi di Utenti';
+$_lang['resource_group_access_ugs_desc'] = 'Un elenco separato da virgole di nomi di Gruppi Utenti. Se non-vuoto, dar&agrave; ai Gruppi di Utenti specificati permessi di lettura per questo Gruppo di Risorse per i contesti di cui sopra.';
+$_lang['roles_msg'] = 'Un ruolo &egrave;, per definizione, una posizione o uno status che un utente detiene in certe situazioni. Possono essere per raggruppare Utenti in una posizione o status in un Gruppo Utenti. I Ruoli in MODX hanno anche quella che &egrave; chiamata "Autorit&agrave;". Questa &egrave; un valore che pu&ograve; essere un qualsiasi numero intero valido. I livelli di Autorit&agrave; sono "ereditati verso il basso", nel senso che un Ruolo con Autorit&agrave; 1 erediter&agrave; qualsiasi Policies di Gruppo assegnate a questo, e di qualsiasi Ruolo con Autorit&agrave; maggiore di 1.';
 $_lang['source_add'] = 'Aggiungi Sorgente Media';
+
+$_lang['user_group_aw'] = 'Accesso Wizard';
+$_lang['user_group_aw_desc'] = 'Nota: Potrebbe essere necessario ripulire le sessioni dopo l\'aggiunta del Gruppo Utenti se selezioni una qualsiasi delle opzioni seguenti.';
+$_lang['user_group_aw_contexts'] = 'Contesti';
+$_lang['user_group_aw_contexts_desc'] = 'Un elenco separato da virgole di Contesti che questo Gruppo Utenti dovrebbe poter vedere.';
+$_lang['user_group_aw_manager_policy'] = 'Gestore Policy';
+$_lang['user_group_aw_manager_policy_desc'] = 'La Policy da assegnare al Gruppo Utenti per le modifiche nel pannello di controllo. Seleziona (nessuna policy) se non vuoi conceder l\'accesso al pannello di controllo.';
+$_lang['user_group_aw_users'] = 'Utenti';
+$_lang['user_group_aw_users_desc'] = 'Un elenco delimitato da virgole di nomi utente da aggiungere a questo gruppo utenti. È possibile utilizzare il formato username:role per impostare il ruolo; in caso contrario, sarà usato "membro" di default.';
+$_lang['user_group_aw_resource_groups'] = 'Gruppi di Risorse';
+$_lang['user_group_aw_resource_groups_desc'] = 'Un elenco separato da virgole di Gruppi di Risorse a cui concedere accesso nei contesti specificati sopra.';
+$_lang['user_group_aw_categories'] = 'Categorie di Elementi';
+$_lang['user_group_aw_categories_desc'] = 'Un elenco separato da virgole di Categorie di Elementi a cui concedere accesso nei contesti specificati sopra.';
+$_lang['user_group_aw_parallel'] = 'Crea Gruppo di Risorse Parallelo';
+$_lang['user_group_aw_parallel_desc'] = 'Se selezioanata, sar&agrave; creato automaticamente un Gruppo di Risorse con lo stesso nome, e sar&agave; concesso a questo Gruppo Utenti l\'accesso di lettura nei contesti specificati sopra.';
+
 $_lang['user_group_category_access'] = 'Elemento di Categoria d\'Accesso';
 $_lang['user_group_category_access_msg'] = 'Qui puoi indicare a quali Elementi questo Gruppo Utente può accedere, attraverso le Categorie in cui si trovano gli Elementi.';
 $_lang['user_group_category_authority_desc'] = 'Il Ruolo Minimo che avrà accesso ai Permessi nella Policy selezionata per questo contesto. Ruoli con Autorità più forte (numeri minori) erediteranno questo accesso. Nella maggior parte dei casi si può lasciare come "Membro".';
@@ -106,14 +134,14 @@ $_lang['user_group_category_policy_desc'] = 'La Policy da applicare a questo Con
 $_lang['user_group_category_remove_confirm'] = 'Sei sicuro di voler rimuovere questa Categoria da questo Gruppo Utenti?';
 $_lang['user_group_context_access'] = 'Accessi Contesti';
 $_lang['user_group_context_access_msg'] = 'Qui puoi indicare a quali Contesti questo Gruppo Utenti può accedere.';
-$_lang['user_group_context_authority_desc'] = 'Il Ruolo Minimo che avrà accesso ai Permessi nella Policy selezionata per questo contesto. Ruoli con autorità maggiore (numeri minori) erediteranno questo accesso. Nella maggior parte delle situazioni puoi lasciare "Membro".';
+$_lang['user_group_context_authority_desc'] = 'Il Ruolo Minimo che avrà accesso ai Permessi nella Policy selezionata per questo contesto. Ruoli con Autorità più forte (numeri minori) erediteranno questo accesso. Nella maggior parte dei casi si può lasciare come "Membro".';
 $_lang['user_group_context_context_desc'] = 'Il Contesto a cui garantire accesso.';
 $_lang['user_group_context_policy_desc'] = 'La Policy da applicare a questo Contesto per questo Gruppo Utenti. Questo garantirà a tutti gli utenti del gruppo, con il Ruolo minimo selezionato, tutti i permessi della Policy.';
 $_lang['user_group_context_err_ae'] = 'Questo Gruppo Utenti ha già accesso a questo Contesto.';
 $_lang['user_group_context_remove_confirm'] = 'Sei sicuro di voler rimuovere questo Contesto da questo Gruppo Utenti?';
 $_lang['user_group_resourcegroup_access'] = 'Accessi Gruppi Risorse';
 $_lang['user_group_resourcegroup_access_msg'] = 'Qui puoi indicare a quali Gruppi Risorse questo Gruppo Utenti può accedere.';
-$_lang['user_group_resourcegroup_authority_desc'] = 'Il Ruolo Minimo che avrà accesso ai Permessi nella Policy selezionata per questo contesto. I ruoli con Autorità maggiore (numero minore) erediteranno questo accesso. Nella maggior parte dei casi puoi lasciare "Membro".';
+$_lang['user_group_resourcegroup_authority_desc'] = 'Il Ruolo Minimo che avrà accesso ai Permessi nella Policy selezionata per questo contesto. Ruoli con Autorità più forte (numeri minori) erediteranno questo accesso. Nella maggior parte dei casi si può lasciare come "Membro".';
 $_lang['user_group_resourcegroup_context_desc'] = 'Il Contesto bersaglio degli oggetti associati al Gruppo Risorse di sopra.';
 $_lang['user_group_resourcegroup_err_ae'] = 'Questo Gruppo Utenti ha già accesso a questo Gruppo Risorse.';
 $_lang['user_group_resourcegroup_policy_desc'] = 'La Policy da applicare a questo Contesto con le Risorse nel Gruppo Risorse per questo Gruppo Utenti. Questo garantirà a tutti gli utenti del Gruppo, con il ruolo minimo selezionato, tutti i permessi della Policy.';

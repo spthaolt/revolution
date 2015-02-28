@@ -22,10 +22,13 @@ class SecurityUserGroupUpdateManagerController extends modManagerController {
      */
     public function loadCustomCssJs() {
         $mgrUrl = $this->modx->getOption('manager_url',null,MODX_MANAGER_URL);
+        $this->addJavascript($mgrUrl.'assets/modext/widgets/core/modx.grid.settings.js');
+        $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.group.settings.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.group.context.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.group.resource.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.group.category.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.group.source.js');
+        $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.grid.user.group.namespace.js');
         $this->addJavascript($mgrUrl.'assets/modext/widgets/security/modx.panel.user.group.js');
         $canEditUsers = $this->modx->hasPermission('usergroup_user_edit') ? 1 : 0;
         $canListUsers = $this->modx->hasPermission('usergroup_user_list') ? 1 : 0;
@@ -49,12 +52,12 @@ class SecurityUserGroupUpdateManagerController extends modManagerController {
      */
     public function process(array $scriptProperties = array()) {
         $placeholders = array();
-        if (empty($scriptProperties['id'])) {
+        if (empty($scriptProperties['id']) || strlen($scriptProperties['id']) !== strlen((integer)$scriptProperties['id'])) {
             $this->userGroup = $this->modx->newObject('modUserGroup');
             $this->userGroup->set('id',0);
             $this->userGroup->set('name',$this->modx->lexicon('anonymous'));
         } else {
-            $this->userGroup = $this->modx->getObject('modUserGroup',$scriptProperties['id']);
+            $this->userGroup = $this->modx->getObject('modUserGroup', array('id' => $scriptProperties['id']));
             if (empty($this->userGroup)) {
                 $this->failure($this->modx->lexicon('usergroup_err_nf'));
             }
@@ -77,7 +80,7 @@ class SecurityUserGroupUpdateManagerController extends modManagerController {
      * @return string
      */
     public function getTemplateFile() {
-        return 'security/usergroup/update.tpl';
+        return '';
     }
 
     /**
@@ -85,6 +88,14 @@ class SecurityUserGroupUpdateManagerController extends modManagerController {
      * @return array
      */
     public function getLanguageTopics() {
-        return array('user','access','policy','context');
+        return array('user','access','policy','context','setting');
+    }
+
+    /**
+     * Get the Help URL
+     * @return string
+     */
+    public function getHelpUrl() {
+        return 'User+Groups';
     }
 }

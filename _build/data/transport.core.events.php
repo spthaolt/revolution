@@ -396,6 +396,12 @@ $events['OnResourceTVFormRender']->fromArray(array (
   'service' => 1,
   'groupname' => 'Resources',
 ), '', true, true);
+$events['OnResourceAutoPublish']= $xpdo->newObject('modEvent');
+$events['OnResourceAutoPublish']->fromArray(array (
+  'name' => 'OnResourceAutoPublish',
+  'service' => 1,
+  'groupname' => 'Resources',
+), '', true, true);
 $events['OnResourceDelete']= $xpdo->newObject('modEvent');
 $events['OnResourceDelete']->fromArray(array (
   'name' => 'OnResourceDelete',
@@ -614,6 +620,18 @@ $events['OnUserDeactivate']->fromArray(array (
   'service' => 1,
   'groupname' => 'Users',
 ), '', true, true);
+$events['OnBeforeUserDuplicate']= $xpdo->newObject('modEvent');
+$events['OnBeforeUserDuplicate']->fromArray(array (
+  'name' => 'OnBeforeUserDuplicate',
+  'service' => 1,
+  'groupname' => 'Users',
+), '', true, true);
+$events['OnUserDuplicate']= $xpdo->newObject('modEvent');
+$events['OnUserDuplicate']->fromArray(array (
+  'name' => 'OnUserDuplicate',
+  'service' => 1,
+  'groupname' => 'Users',
+), '', true, true);
 $events['OnUserChangePassword']= $xpdo->newObject('modEvent');
 $events['OnUserChangePassword']->fromArray(array (
   'name' => 'OnUserChangePassword',
@@ -706,15 +724,75 @@ $events['OnSiteRefresh']->fromArray(array (
   'service' => 1,
   'groupname' => 'System',
 ), '', true, true);
+$events['OnFileManagerDirCreate']= $xpdo->newObject('modEvent');
+$events['OnFileManagerDirCreate']->fromArray(array (
+  'name' => 'OnFileManagerDirCreate',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileManagerDirRemove']= $xpdo->newObject('modEvent');
+$events['OnFileManagerDirRemove']->fromArray(array (
+  'name' => 'OnFileManagerDirRemove',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileManagerDirRename']= $xpdo->newObject('modEvent');
+$events['OnFileManagerDirRename']->fromArray(array (
+  'name' => 'OnFileManagerDirRename',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileManagerFileRename']= $xpdo->newObject('modEvent');
+$events['OnFileManagerFileRename']->fromArray(array (
+  'name' => 'OnFileManagerFileRename',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileManagerFileRemove']= $xpdo->newObject('modEvent');
+$events['OnFileManagerFileRemove']->fromArray(array (
+  'name' => 'OnFileManagerFileRemove',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileManagerFileUpdate']= $xpdo->newObject('modEvent');
+$events['OnFileManagerFileUpdate']->fromArray(array (
+  'name' => 'OnFileManagerFileUpdate',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileManagerFileCreate']= $xpdo->newObject('modEvent');
+$events['OnFileManagerFileCreate']->fromArray(array (
+  'name' => 'OnFileManagerFileCreate',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileManagerBeforeUpload']= $xpdo->newObject('modEvent');
+$events['OnFileManagerBeforeUpload']->fromArray(array (
+  'name' => 'OnFileManagerBeforeUpload',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
 $events['OnFileManagerUpload']= $xpdo->newObject('modEvent');
 $events['OnFileManagerUpload']->fromArray(array (
   'name' => 'OnFileManagerUpload',
   'service' => 1,
   'groupname' => 'System',
 ), '', true, true);
+$events['OnFileManagerMoveObject']= $xpdo->newObject('modEvent');
+$events['OnFileManagerMoveObject']->fromArray(array (
+  'name' => 'OnFileManagerMoveObject',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
 $events['OnFileCreateFormPrerender']= $xpdo->newObject('modEvent');
 $events['OnFileCreateFormPrerender']->fromArray(array (
   'name' => 'OnFileCreateFormPrerender',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnFileEditFormPrerender']= $xpdo->newObject('modEvent');
+$events['OnFileEditFormPrerender']->fromArray(array (
+  'name' => 'OnFileEditFormPrerender',
   'service' => 1,
   'groupname' => 'System',
 ), '', true, true);
@@ -778,7 +856,18 @@ $events['OnHandleRequest']->fromArray(array (
   'service' => 5,
   'groupname' => 'System',
 ), '', true, true);
-
+$events['OnMODXInit']= $xpdo->newObject('modEvent');
+$events['OnMODXInit']->fromArray(array (
+  'name' => 'OnMODXInit',
+  'service' => 5,
+  'groupname' => 'System',
+), '', true, true);
+$events['OnElementNotFound']= $xpdo->newObject('modEvent');
+$events['OnElementNotFound']->fromArray(array (
+  'name' => 'OnElementNotFound',
+  'service' => 1,
+  'groupname' => 'System',
+), '', true, true);
 
 /* Settings */
 $events['OnSiteSettingsRender']= $xpdo->newObject('modEvent');
@@ -793,7 +882,7 @@ $events['OnSiteSettingsRender']->fromArray(array (
 $events['OnInitCulture']= $xpdo->newObject('modEvent');
 $events['OnInitCulture']->fromArray(array (
   'name' => 'OnInitCulture',
-  'service' => 3,
+  'service' => 1,
   'groupname' => 'Internationalization',
 ), '', true, true);
 

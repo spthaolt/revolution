@@ -7,6 +7,7 @@ $xpdo_meta_map['modSnippet']= array (
   'package' => 'modx',
   'version' => '1.1',
   'table' => 'site_snippets',
+  'extends' => 'modScript',
   'fields' => 
   array (
     'cache_type' => 0,
@@ -113,6 +114,24 @@ $xpdo_meta_map['modSnippet']= array (
       ),
     ),
   ),
+  'composites' => 
+  array (
+    'PropertySets' => 
+    array (
+      'class' => 'modElementPropertySet',
+      'local' => 'id',
+      'foreign' => 'element',
+      'owner' => 'local',
+      'cardinality' => 'many',
+      'criteria' => 
+      array (
+        'foreign' => 
+        array (
+          'element_class' => 'modSnippet',
+        ),
+      ),
+    ),
+  ),
   'validation' => 
   array (
     'rules' => 
@@ -122,7 +141,7 @@ $xpdo_meta_map['modSnippet']= array (
         'invalid' => 
         array (
           'type' => 'preg_match',
-          'rule' => '/^(?!\\s)[a-zA-Z0-9\\x2d-\\x2f\\x7f-\\xff_-\\s]+(?!\\s)$/',
+          'rule' => '/^(?!\\s)[a-zA-Z0-9\\x2d-\\x2f\\x7f-\\xff-_\\s]+(?!\\s)$/',
           'message' => 'snippet_err_invalid_name',
         ),
       ),

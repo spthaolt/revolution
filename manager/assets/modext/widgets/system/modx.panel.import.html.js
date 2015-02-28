@@ -1,9 +1,9 @@
 MODx.panel.ImportHTML = function(config) {
     config = config || {};
     Ext.applyIf(config,{
-        url: MODx.config.connectors_url+'system/import/html.php'
+        url: MODx.config.connector_url
         ,baseParams: {
-            action: 'html'
+            action: 'system/import/html'
         }
         ,id: 'modx-panel-import-html'
 		,cls: 'container'
@@ -36,7 +36,8 @@ MODx.panel.ImportHTML = function(config) {
 					,id: 'modx-import-element'
 					,labelSeparator: ''
 					,anchor: '100%'
-					,value: 'body'
+					,value: '{"content":"$body"}'
+                    ,description: _('import_element_help')
 				},{
 					xtype: 'hidden'
 					,name: 'import_context'
@@ -54,7 +55,8 @@ MODx.panel.ImportHTML = function(config) {
 				},MODx.PanelSpacer,{
 					xtype: 'modx-tree-resource-simple'
 					,title: _('import_use_doc_tree')
-					,url: MODx.config.connectors_url+'resource/index.php'
+					,url: MODx.config.connector_url
+                    ,action: 'resource/getnodes'
 					,id: 'modx-ih-resource-tree'
 					,enableDrop: false
 					,rootVisible: false

@@ -177,8 +177,14 @@ class modPHPMailer extends modMail {
      * @return boolean True if the email was successfully sent
      */
     public function send(array $attributes= array()) {
-        $sent = parent :: send($attributes);
+        parent :: send($attributes);
+
         $sent = $this->mailer->Send();
+        if ($sent !== true) {
+            $this->error = $this->modx->getService('error.modError');
+            $this->error->addError($this->mailer->ErrorInfo);
+        }
+
         return $sent;
     }
 
@@ -230,6 +236,21 @@ class modPHPMailer extends modMail {
     public function attach($file,$name = '',$encoding = 'base64',$type = 'application/octet-stream') {
         parent :: attach($file);
         $this->mailer->AddAttachment($file,$name,$encoding,$type);
+    }
+    
+    /**
+     * Embeds image inside message body.
+     *
+     * @param mixed $image Absolute path to image
+     * @param string $cid Id of the image by wich it will be available in html.
+     *        Example: <img src="cid:<$cid>" />
+     * @param string $name The name of the image to attach as
+     * @param string $encoding The encoding of the attachment
+     * @param string $type The header type of the attachment
+     */
+    public function embedImage($image, $cid, $name = '', $encoding = 'base64', $type = 'application/octet-stream') {
+      parent :: embedImage($image,$cid);
+      $this->mailer->AddEmbeddedImage('/'.$image,$cid,$name,$encoding,$type);
     }
 
     /**

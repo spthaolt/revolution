@@ -1,8 +1,8 @@
 <?php
 /**
- * Access Swedish lexicon topic
+ * Access English lexicon topic
  *
- * @language sv
+ * @language en
  * @package modx
  * @subpackage lexicon
  */
@@ -26,7 +26,7 @@ $_lang['access_err_create_md'] = 'Kan inte skapa ACL - data saknas!';
 $_lang['access_err_nf'] = 'Kan inte hitta angiven ACL!';
 $_lang['access_err_remove'] = 'Ett fel inträffade när ACL:en skulle tas bort!';
 $_lang['access_err_save'] = 'Ett fel inträffade när ACL:en skulle sparas!';
-$_lang['access_grid_empty'] = 'Det finns inga ACL:er att visa'; // ACL = Access Control List = åtkomstkontrollista/behörighetslista(?)
+$_lang['access_grid_empty'] = 'Det finns inga ACL:er att visa';
 $_lang['access_grid_paginate'] = 'Visar ACL:erna {0} - {1} av {2}';
 $_lang['access_permissions'] = 'Åtkomstinställningar';
 $_lang['access_permissions_add_document_group'] = 'Skapa en ny dokumentgrupp';
@@ -59,6 +59,7 @@ $_lang['access_rgroup_err_ns'] = 'Ingen ACL för resursgruppen angiven.';
 $_lang['access_rgroup_err_remove'] = 'Ett fel inträffade när resursgruppens ACL skulle tas bort.';
 $_lang['access_rgroup_remove'] = 'Ta bort tillgång till resursgrupp';
 $_lang['access_rgroup_update'] = 'Uppdatera tillgång till resursgrupp';
+$_lang['access_source_err_ae'] = 'Det finns redan en ACL för den mediakällan.';
 $_lang['access_source_remove'] = 'Ta bort tillgång till mediakälla';
 $_lang['access_source_update'] = 'Uppdatera tillgång till mediakälla';
 $_lang['access_to_contexts'] = 'Tillgång till kontexter';
@@ -94,8 +95,35 @@ $_lang['resource_group_resource_err_nf'] = 'Resursen är inte med i den resursgr
 $_lang['resource_group_resource_err_remove'] = 'Ett fel inträffade när resursen skulle tas bort från resursgruppen.';
 $_lang['resource_group_untitled'] = 'Namnlös resursgrupp';
 $_lang['resource_group_update'] = 'Uppdatera resursgrupp';
+$_lang['resource_group_access_contexts'] = 'En kommaseparerad lista med kontexter som resursgruppen ska avse för följande alternativ.';
+$_lang['resource_group_automatic_access'] = 'Åtkomstguide';
+$_lang['resource_group_automatic_access_desc'] = 'Notera: Du kan behöva avsluta alla sessioner efter att du lagt till resursgruppen om du markerar något av valen nedan.';
+$_lang['resource_group_access_admin'] = 'Ge administratör gruppåtkomst automatiskt';
+$_lang['resource_group_access_admin_desc'] = 'Om denna markeras ges administratörsgruppen läs- och redigeringsåtkomst till denna resursgrupp för de kontexter som angetts ovan.';
+$_lang['resource_group_access_anon'] = 'Ge anonym åtkomst automatiskt';
+$_lang['resource_group_access_anon_desc'] = 'Om denna markeras ges icke inloggade användare läsåtkomst till denna resursgrupp för de kontexter som angetts ovan.';
+$_lang['resource_group_access_parallel'] = 'Skapa parallell användargrupp';
+$_lang['resource_group_access_parallel_desc'] = 'Om denna markeras skapas automatiskt en användargrupp med samma namn och läsåtkomst till denna resursgrupp för de kontexter som angetts ovan.';
+$_lang['resource_group_access_ugs'] = 'Ge andra användargrupper åtkomst automatiskt';
+$_lang['resource_group_access_ugs_desc'] = 'En kommaseparerad lista med namn på användargrupper. De användargrupper som anges här kommer att få läsbehörighet till denna resursgrupp för ovanstående kontexter.';
 $_lang['roles_msg'] = 'En roll är, per definition, den position eller status man har i en viss situation. Den kan användas för att gruppera användare till en position eller status inom en användargrupp. Roller i MODX har också vad som kallas "Befogenhet". Detta är ett nummer som kan vara vilket giltigt heltal som helst. Befogenhetsnivåer "ärvs neråt" i den mening att en roll med befogenhetsnivå 1 ärver alla gruppolicyer tilldelade till sig själv och till alla roller med högre befogenhetsnivå än 1.';
 $_lang['source_add'] = 'Lägg till mediakälla';
+
+$_lang['user_group_aw'] = 'Åtkomstguide';
+$_lang['user_group_aw_desc'] = 'Notera: Du kan behöva avsluta alla sessioner efter att du lagt till användargruppen om du markerar något av valen nedan.';
+$_lang['user_group_aw_contexts'] = 'Kontexter';
+$_lang['user_group_aw_contexts_desc'] = 'En kommaseparerad lista med kontexter som denna användargrupp ska kunna se.';
+$_lang['user_group_aw_manager_policy'] = 'Policy för hanteraren';
+$_lang['user_group_aw_manager_policy_desc'] = 'Den policy som ska ges till användargruppen för redigering i hanteraren. Välj "(ingen policy)" om du inte vill ge behörighet till hanteraren.';
+$_lang['user_group_aw_users'] = 'Användare';
+$_lang['user_group_aw_users_desc'] = 'En kommaseparerad lista med användarnamn som ska läggas till i denna användargrupp. Använd formatet användarnamn:roll för att ange rollen. Om du inte gör det sätts rollen till Medlem.';
+$_lang['user_group_aw_resource_groups'] = 'Resursgrupper';
+$_lang['user_group_aw_resource_groups_desc'] = 'En kommaseparerad lista med resursgrupper som det ska gå att ge åtkomst till i kontexterna som angetts ovan.';
+$_lang['user_group_aw_categories'] = 'Elementkategorier';
+$_lang['user_group_aw_categories_desc'] = 'En kommaseparerad lista med elementkategorier som det ska gå att ge åtkomst till i kontexterna som angetts ovan.';
+$_lang['user_group_aw_parallel'] = 'Skapa parallell resursgrupp';
+$_lang['user_group_aw_parallel_desc'] = 'Om denna markeras skapas automatiskt en resursgrupp med samma namn och denna användargrupp får läsåtkomst till den för de kontexter som angetts ovan.';
+
 $_lang['user_group_category_access'] = 'Elementkategoriåtkomst';
 $_lang['user_group_category_access_msg'] = 'Här kan du ange vilka element denna användargrupp kan komma åt genom de kategorier elementen ingår i.';
 $_lang['user_group_category_authority_desc'] = 'Den minimiroll som får tillgång till behörigheterna i den valda policyn för denna kontext. Roller med starkare auktoritet (lägre nummer) kommer att ärva denna tillgång också. I de flesta lägen kan du lämna denna satt till "Medlem".';

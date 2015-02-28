@@ -29,7 +29,7 @@ class modUserUpdateProcessor extends modObjectUpdateProcessor {
     public $validator;
     /** @var string $newPassword */
     public $newPassword = '';
-    
+
 
     /**
      * Allow for Users to use derivative classes for their processors
@@ -63,7 +63,6 @@ class modUserUpdateProcessor extends modObjectUpdateProcessor {
         $this->setDefaultProperties(array(
             'class_key' => $this->classKey,
         ));
-        $this->classKey = $this->getProperty('class_key');
         return parent::initialize();
     }
 
@@ -74,6 +73,7 @@ class modUserUpdateProcessor extends modObjectUpdateProcessor {
     public function beforeSet() {
         $this->setCheckbox('blocked');
         $this->setCheckbox('active');
+        $this->setCheckbox('sudo');
         return parent::beforeSet();
     }
 
@@ -84,7 +84,11 @@ class modUserUpdateProcessor extends modObjectUpdateProcessor {
     public function beforeSave() {
         $this->setProfile();
         $this->setRemoteData();
-        $this->setUserGroups();
+
+        $sudo = $this->getProperty('sudo',null);
+        if ($sudo !== null) {
+            $this->object->setSudo(!empty($sudo));
+        }
 
         $this->validator = new modUserValidation($this,$this->object,$this->profile);
         $this->validator->validate();
@@ -163,21 +167,24 @@ class modUserUpdateProcessor extends modObjectUpdateProcessor {
             /* create user group links */
             $groupsAdded = array();
             $groups = is_array($groups) ? $groups : $this->modx->fromJSON($groups);
+            $idx = 0;
             foreach ($groups as $group) {
                 if (in_array($group['usergroup'],$groupsAdded)) continue;
                 $membership = $this->modx->newObject('modUserGroupMember');
                 $membership->set('user_group',$group['usergroup']);
                 $membership->set('role',$group['role']);
                 $membership->set('member',$this->object->get('id'));
-                $membership->set('rank',isset($group['rank']) ? $group['rank'] : 0);
+                $membership->set('rank',isset($group['rank']) ? $group['rank'] : $idx);
                 if (empty($group['rank'])) {
                     $primaryGroupId = $group['usergroup'];
                 }
                 $memberships[] = $membership;
                 $groupsAdded[] = $group['usergroup'];
+                $idx++;
             }
             $this->object->addMany($memberships,'UserGroupMembers');
             $this->object->set('primary_group',$primaryGroupId);
+            $this->object->save();
         }
         return $memberships;
     }
@@ -187,6 +194,7 @@ class modUserUpdateProcessor extends modObjectUpdateProcessor {
      * @return boolean
      */
     public function afterSave() {
+        $this->setUserGroups();
         $this->sendNotificationEmail();
         if ($this->activeStatusChanged) {
             $this->fireAfterActiveStatusChange();
@@ -235,7 +243,7 @@ class modUserUpdateProcessor extends modObjectUpdateProcessor {
     public function cleanup() {
         $passwordNotifyMethod = $this->getProperty('passwordnotifymethod');
         if (!empty($passwordNotifyMethod) && !empty($this->newPassword) && $passwordNotifyMethod  == 's') {
-            return $this->success($this->modx->lexicon('user_created_password_message',array(
+            return $this->success($this->modx->lexicon('user_updated_password_message',array(
                 'password' => $this->newPassword,
             )),$this->object);
         } else {

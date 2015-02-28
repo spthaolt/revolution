@@ -9,7 +9,10 @@ MODx.grid.DashboardWidgets = function(config) {
 
     this.sm = new Ext.grid.CheckboxSelectionModel();
     Ext.applyIf(config,{
-        url: MODx.config.connectors_url+'system/dashboard/widget.php'
+        url: MODx.config.connector_url
+        ,baseParams: {
+            action: 'system/dashboard/widget/getlist'
+        }
         ,fields: ['id','name','name_trans','description','description_trans','type','content','namespace','lexicon','size','cls']
         ,paging: true
         ,remoteSort: true
@@ -39,9 +42,10 @@ MODx.grid.DashboardWidgets = function(config) {
         }]
         ,tbar: [{
             text: _('widget_create')
+            ,cls:'primary-button'
             ,handler: this.createDashboard
             ,scope: this
-        },'-',{
+        },{
             text: _('bulk_actions')
             ,menu: [{
                 text: _('selected_remove')
@@ -52,6 +56,7 @@ MODx.grid.DashboardWidgets = function(config) {
             xtype: 'textfield'
             ,name: 'search'
             ,id: 'modx-dashboard-widget-search'
+            ,cls: 'x-form-filter'
             ,emptyText: _('search_ellipsis')
             ,listeners: {
                 'change': {fn: this.search, scope: this}
@@ -65,8 +70,9 @@ MODx.grid.DashboardWidgets = function(config) {
             }
         },{
             xtype: 'button'
-            ,id: 'modx-dashboard-widgets-filter-clear'
             ,text: _('filter_clear')
+            ,id: 'modx-dashboard-widgets-filter-clear'
+            ,cls: 'x-form-filter-clear'
             ,listeners: {
                 'click': {fn: this.clearFilter, scope: this}
             }
@@ -107,7 +113,7 @@ Ext.extend(MODx.grid.DashboardWidgets,MODx.grid.Grid,{
     }
 
     ,createDashboard: function() {
-        location.href = 'index.php?a='+MODx.action['system/dashboards/widget/create'];
+        MODx.loadPage('system/dashboards/widget/create');
     }
     ,removeSelected: function() {
         var cs = this.getSelectedAsList();
@@ -118,7 +124,7 @@ Ext.extend(MODx.grid.DashboardWidgets,MODx.grid.Grid,{
             ,text: _('widget_remove_multiple_confirm')
             ,url: this.config.url
             ,params: {
-                action: 'removeMultiple'
+                action: 'system/dashboard/widget/removeMultiple'
                 ,widgets: cs
             }
             ,listeners: {
@@ -137,7 +143,7 @@ Ext.extend(MODx.grid.DashboardWidgets,MODx.grid.Grid,{
             ,text: _('widget_remove_confirm')
             ,url: this.config.url
             ,params: {
-                action: 'remove'
+                action: 'system/dashboard/widget/remove'
                 ,id: this.menu.record.id
             }
             ,listeners: {
@@ -147,22 +153,22 @@ Ext.extend(MODx.grid.DashboardWidgets,MODx.grid.Grid,{
     }
 
     ,updateWidget: function() {
-        location.href = 'index.php?a='+MODx.action['system/dashboards/widget/update']+'&id='+this.menu.record.id;
+        MODx.loadPage('system/dashboards/widget/update', 'id='+this.menu.record.id);
     }
     ,search: function(tf,newValue,oldValue) {
         var nv = newValue || tf;
         this.getStore().baseParams.query = Ext.isEmpty(nv) || Ext.isObject(nv) ? '' : nv;
         this.getBottomToolbar().changePage(1);
-        this.refresh();
+        //this.refresh();
         return true;
     }
     ,clearFilter: function() {
     	this.getStore().baseParams = {
-            action: 'getList'
+            action: 'system/dashboard/widget/getlist'
     	};
         Ext.getCmp('modx-dashboard-widget-search').reset();
     	this.getBottomToolbar().changePage(1);
-        this.refresh();
+        //this.refresh();
     }
 });
 Ext.reg('modx-grid-dashboard-widgets',MODx.grid.DashboardWidgets);
